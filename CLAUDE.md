@@ -19,3 +19,4 @@
 1. Kiểm tra app không lỗi (không lỗi JS, chạy được cả 4 tab).
 2. Commit với lời nhắn tiếng Việt.
 3. Gộp (merge) thẳng vào nhánh `main` để GitHub Pages cập nhật.
+4. Sau khi push, cập nhật bản copy `index.html` vào artifact **Trading Lab**: https://claude.ai/artifact/5cf3XchL4Vqsf95AQRRnUq (đăng lại vào đúng URL này, không tạo artifact mới).
