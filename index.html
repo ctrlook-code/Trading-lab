@@ -263,12 +263,24 @@ label.chk input{width:22px;height:22px;flex:none;margin:0}
 <div id="tabLab">
 <section class="card">
 <h2>1. Dữ liệu giá</h2>
-<label>Dãy giá tự nhập, hoặc dữ liệu từ bên thứ 3 (CSV)<textarea id="csv" placeholder="Dãy giá: 100, 100.5, 101.2, 100.8 ...&#10;hoặc CSV: time,open,high,low,close"></textarea></label>
+<p class="cap" style="margin-top:0">Lấy giá và lịch sử giá từ Binance cho các sản phẩm ở tab “Giá trực tuyến”</p>
+<div class="grid">
+ <label>Sản phẩm<select id="b_sym"></select></label>
+ <label>Khung nến<select id="b_tf"></select></label>
+ <label>Khoảng dữ liệu<select id="b_rg"><option value="n">Số nến gần nhất</option><option value="d">Theo ngày</option></select></label>
+ <label id="b_nW">Số nến (10–10000)<input id="b_n" type="number" min="10" max="10000" step="1" inputmode="numeric"></label>
+ <label id="b_fW" hidden>Từ ngày<input id="b_from" type="date"></label>
+ <label id="b_tW" hidden>Đến ngày<input id="b_to" type="date"></label>
+</div>
+<div class="row"><button id="b_load">Tải lịch sử giá vào Lab</button></div>
+<div class="st" id="b_stat" hidden></div>
+<div class="err" id="b_err"></div>
+<label style="margin-top:14px">Hoặc dãy giá tự nhập, hoặc dữ liệu từ bên thứ 3 (CSV)<textarea id="csv" placeholder="Dãy giá: 100, 100.5, 101.2, 100.8 ...&#10;hoặc CSV: time,open,high,low,close"></textarea></label>
 <div class="grid" style="margin-top:10px">
 <label>Hoặc tải file CSV / TXT<input id="file" type="file" accept=".csv,.txt"></label>
 <label>Giá khởi tạo (chế độ bấm tay)<input id="p0" type="number" step="any" placeholder="Bỏ trống = giá đầu của dữ liệu"></label>
 </div>
-<p class="cap" style="margin-top:8px">Dãy giá: các số cách nhau bằng dấu phẩy, khoảng trắng hoặc xuống dòng. CSV nhận diện cột theo tên open, high, low, close; không có tiêu đề thì 5 cột = thời gian,O,H,L,C, 4 cột = O,H,L,C, 1–2 cột = giá đóng cửa. Có thể lấy nến thật từ tab “Giá trực tuyến”.</p>
+<p class="cap" style="margin-top:8px">Dãy giá: các số cách nhau bằng dấu phẩy, khoảng trắng hoặc xuống dòng. CSV nhận diện cột theo tên open, high, low, close; không có tiêu đề thì 5 cột = thời gian,O,H,L,C, 4 cột = O,H,L,C, 1–2 cột = giá đóng cửa. Tải từ Binance ở trên sẽ tự điền nến vào ô này.</p>
 </section>
 
 <section class="card">
@@ -327,6 +339,9 @@ label.chk input{width:22px;height:22px;flex:none;margin:0}
 const $=id=>document.getElementById(id);
 const fmt=(v,d=2)=>isFinite(v)?Number(v).toLocaleString('vi-VN',{maximumFractionDigits:d}):'–';
 const cls=v=>v>0?'pos':v<0?'neg':'';
+/* Sản phẩm và khung nến của tab Giá trực tuyến, dùng chung cho mục tải dữ liệu của Lab */
+const LIVE_SY=[['BTCUSDT','Bitcoin'],['ETHUSDT','Ethereum'],['BNBUSDT','BNB'],['SOLUSDT','Solana'],['XRPUSDT','XRP'],['PAXGUSDT','PAX Gold (token vàng)'],['XAUTUSDT','Tether Gold (token vàng)']];
+const LIVE_TF=[['1m','M1'],['5m','M5'],['15m','M15'],['1h','H1'],['4h','H4'],['1d','D1']];
 let bars=[],S=null,acts=[],di=0,timer=null,saved=[],dataLabel='',curM='';const PM={};
 try{const v=JSON.parse(localStorage.getItem('tl_saved')||'[]');if(Array.isArray(v))saved=v}catch(e){}
 
@@ -440,7 +455,7 @@ const METHODS={buygrid:{name:'Only buy grid',tag:'Lưới · chỉ BUY · spot',
 METHODS.buyrb={name:'Only buy grid · Mua khi hồi',tag:'Lưới · chỉ BUY · spot · mua khi giá tăng',desc:'Giống PP1: Only buy grid nhưng khi giá giảm xuống một mắc thì không mua. Chỉ mua khi giá đi lên chạm mắc chưa có lệnh. Cách cắt lệnh giữ nguyên.',make:(p,a)=>makeBuyGrid(p,a,true),params:METHODS.buygrid.params};
 METHODS.buyrb.notes=['Lệnh mua và lệnh cắt đều khớp đúng tại giá mắc lưới. Mỗi mắc tối đa 1 lệnh.','Giá đi xuống chạm một mắc: không mua, cứ để giá giảm. Giá đi lên chạm một mắc chưa có lệnh: mua 1 lệnh tại mắc đó. Mắc đã có lệnh thì không mua thêm. Lúc bắt đầu tại giá khởi tạo chưa mua.','Quy tắc cắt giống PP1: Only buy grid và vẫn được xét tại mọi mắc (kể cả khi giá đi xuống): lệnh cao nhất đang lỗ thì cắt cùng số lệnh thấp nhất đang lãi ít nhất sao cho tổng dương, lặp lại đến khi không cắt được.','Không chốt lời riêng từng lệnh và không cắt lỗ theo giá.','Mục đích: vốn chiếm dụng thấp hơn khi giá giảm, để dành vốn cho sản phẩm khác (ví dụ sản phẩm tương quan nghịch). Đổi lại bỏ lỡ các mắc đáy đã đi qua.','Chưa xác nhận: giới hạn số lệnh hoặc vốn; việc cắt khi giá đang giảm; tên phương pháp là tên tạm.'];
 const NO=k=>Object.keys(METHODS).indexOf(k)+1;
-const COMMON=['Giao dịch spot: không đòn bẩy, không bán khống. Không tính phí, spread, trượt giá.','Chế độ tự động: mỗi nến đi theo đường O→L→H→C (nến tăng) hoặc O→H→L→C (nến giảm). Dãy giá thì mỗi số là một điểm giá.','Chế độ bấm tay: mỗi lần bấm giá di chuyển đúng một khoảng lưới từ vị trí hiện tại. Hoàn tác lùi lại một thao tác.','Giá nhảy qua nhiều mắc trong một lần: xử lý lần lượt từng mắc theo hướng giá đi. Giá nằm giữa hai mắc: không có hành động, chỉ cập nhật lãi/lỗ thả nổi.','Dữ liệu cho Lab: dán, nạp file, hoặc lấy nến thật từ tab “Giá trực tuyến” (chỉ chạy ở bản trên GitHub Pages).'];
+const COMMON=['Giao dịch spot: không đòn bẩy, không bán khống. Không tính phí, spread, trượt giá.','Chế độ tự động: mỗi nến đi theo đường O→L→H→C (nến tăng) hoặc O→H→L→C (nến giảm). Dãy giá thì mỗi số là một điểm giá.','Chế độ bấm tay: mỗi lần bấm giá di chuyển đúng một khoảng lưới từ vị trí hiện tại. Hoàn tác lùi lại một thao tác.','Giá nhảy qua nhiều mắc trong một lần: xử lý lần lượt từng mắc theo hướng giá đi. Giá nằm giữa hai mắc: không có hành động, chỉ cập nhật lãi/lỗ thả nổi.','Dữ liệu cho Lab: tải lịch sử giá từ Binance ở mục 1, dán, nạp file, hoặc lấy nến thật từ tab “Giá trực tuyến” (tải từ Binance chỉ chạy ở bản trên GitHub Pages).'];
 METHODS.buygrid.notes=['Lệnh mua và lệnh cắt đều khớp đúng tại giá mắc lưới.','Mỗi mắc tối đa 1 lệnh. Giá chạm một mắc chưa có lệnh (đi lên hay đi xuống) thì mua 1 lệnh tại mắc đó; tại giá khởi tạo lúc bắt đầu chưa mua.','Quy tắc cắt: khi lệnh ở mắc cao nhất đang lỗ, cắt nó cùng số lệnh thấp nhất (lãi nhiều nhất) ít nhất sao cho tổng lãi/lỗ của nhóm cắt dương, lặp lại đến khi không cắt được nữa.','Không chốt lời riêng từng lệnh và không cắt lỗ theo giá.','Vốn chiếm dụng = tổng giá trị (giá vào × số lượng) các lệnh đang mở. “Vốn tham chiếu” chỉ dùng để tính % sụt giảm.','Chưa xác minh: giới hạn số lệnh hoặc vốn. Thông số “Tối đa lệnh mở” hiện chỉ dừng mua khi đạt giới hạn.'];
 METHODS.infinity.notes=['Số lượng sản phẩm ban đầu = vốn × tỷ lệ ÷ giá khởi tạo, mua tại giá khởi tạo.','Giá giảm một mắc: mua một lô. Giá hồi lên một mắc: bán lô ở mắc ngay phía dưới. Giá tăng trên giá khởi tạo: bán dần phần sản phẩm ban đầu.','Hết tiền mặt: chỉ mua phần còn đủ và dừng mua cho đến khi bán được.','Không có giá trần (giả định, chưa xác nhận).','Vốn chiếm dụng tối đa = phần vốn đã chuyển thành sản phẩm cao nhất (nguồn vốn trừ tiền mặt thấp nhất). “Lãi đã chốt” là lãi của các lô đã bán, phần còn lại là thả nổi.'];
 METHODS.momentum.notes=['Giao dịch CFD: cho phép bán khống (SELL). Chưa tính ký quỹ, đòn bẩy, phí, spread và phí qua đêm. Giả định vốn vô hạn, không giới hạn số lệnh mở.','Lệnh mở và cắt đều khớp đúng tại giá mắc lưới. Giá đi lên tới một mắc: nếu số BUY ở đó đã lớn hơn số SELL thì không mua; nếu chưa thì mua thêm cho số BUY hơn số SELL đúng một lệnh (chưa có gì thì mua 1). Giá đi xuống thì ngược lại với SELL. Mỗi lần giá chạm lại từ hướng ngược, mắc thêm lệnh nên số lệnh mỗi mắc tăng dần cho đến khi cắt toàn bộ.','Thứ tự tại mỗi mắc: xét cắt trước (tổng lãi/lỗ ròng của mọi lệnh đang mở lớn hơn 0 thì cắt toàn bộ), rồi mới áp quy tắc mở lệnh ở trên (sau khi cắt, mắc đó trống nên mở 1 lệnh).','Lúc bắt đầu tại giá khởi tạo chưa mở lệnh. Không chốt lời riêng từng lệnh, không cắt lỗ theo giá.','Vốn chiếm dụng = tổng (giá vào × số lượng) của mọi lệnh BUY và SELL đang mở (giá trị danh nghĩa, chưa bù trừ). “Tổng % vốn” chỉ có khi nhập vốn tham chiếu.','Chưa xác nhận: “tổng lớn hơn 0” hiện hiểu là lãi tối thiểu một khoảng lưới (vì mọi lệnh khớp đúng mắc). Quy tắc “hơn một lệnh” hiểu theo số lệnh. Số lệnh mỗi mắc tăng dần khi giá chạm lại nhiều lần. Tên phương pháp là tên tạm.'];
@@ -563,6 +578,72 @@ $('clr').onclick=()=>{saved=[];renderCmp()};
 addEventListener('resize',charts);
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',charts);
 renderParams();renderCmp();
+</script>
+
+<script>
+/* ===== Lab mô phỏng: tải giá và lịch sử giá từ Binance (sản phẩm của tab Giá trực tuyến) ===== */
+(()=>{
+const $=id=>document.getElementById('b_'+id),D=id=>document.getElementById(id);
+const REST=['https://data-api.binance.vision','https://api.binance.com'];
+const CAP=10000,DAY=864e5;
+const q2=v=>String(v).padStart(2,'0');
+const ymd=t=>{const d=new Date(t);return d.getFullYear()+'-'+q2(d.getMonth()+1)+'-'+q2(d.getDate())};
+const ts=t=>{const d=new Date(t);return ymd(t)+' '+q2(d.getHours())+':'+q2(d.getMinutes())};
+const dt=t=>{const d=new Date(t);return q2(d.getDate())+'/'+q2(d.getMonth()+1)+'/'+d.getFullYear()+' '+q2(d.getHours())+':'+q2(d.getMinutes())};
+const dp=p=>p>=1000?2:p>=10?3:p>=1?4:6;
+const TFN=k=>(LIVE_TF.find(t=>t[0]==k)||[0,k])[1];
+const B={sym:'BTCUSDT',tf:'1h',rg:'n',n:500,from:ymd(Date.now()-30*DAY),to:ymd(Date.now())};
+try{const v=JSON.parse(localStorage.getItem('tl_labsrc')||'{}');if(v&&typeof v=='object')Object.assign(B,v)}catch(e){}
+try{const v=JSON.parse(localStorage.getItem('tl_live')||'{}');if(!localStorage.getItem('tl_labsrc')&&v.sym)B.sym=v.sym}catch(e){}
+const keep=()=>{try{localStorage.setItem('tl_labsrc',JSON.stringify(B))}catch(e){}};
+let gen=0,extra=null;
+/* Danh sách sản phẩm = danh sách của tab Giá trực tuyến + mã khác đang xem ở tab đó */
+function opts(){const L=LIVE_SY.slice();for(const s of [extra,B.sym])if(s&&!L.some(x=>x[0]==s))L.push([s,'mã khác']);
+ $('sym').innerHTML=L.map(s=>`<option value="${s[0]}">${s[0]} · ${s[1]}</option>`).join('');$('sym').value=B.sym}
+window.tlLabSyms=s=>{if(s===extra)return;extra=s;opts()};
+function rg(){const d=$('rg').value=='d';$('nW').hidden=d;$('fW').hidden=!d;$('tW').hidden=!d}
+function readB(){B.sym=$('sym').value;B.tf=$('tf').value;B.rg=$('rg').value;B.n=parseFloat($('n').value);B.from=$('from').value;B.to=$('to').value;keep()}
+async function getJ(path){let e;for(const b of REST){try{const r=await fetch(b+path,{cache:'no-store'});
+  if(!r.ok){const t=await r.text().catch(()=>'');throw Error('HTTP '+r.status+(/invalid symbol/i.test(t)?' – mã không có trên Binance':''))}return await r.json()}catch(x){e=x}}throw e}
+const kl=k=>k.map(r=>({t:r[0],o:+r[1],h:+r[2],l:+r[3],c:+r[4]}));
+function msg(t){const s=$('stat');s.hidden=!t;s.textContent=t||''}
+async function load(){readB();const g=++gen;$('err').textContent='';
+ const sym=B.sym,tf=B.tf,base=`/api/v3/klines?symbol=${sym}&interval=${tf}`;let out=[],cut=false;
+ try{
+  if(B.rg=='d'){
+   const f=new Date(B.from+'T00:00').getTime(),t=Math.min(Date.now(),new Date(B.to+'T00:00').getTime()+DAY-1);
+   if(!(f>0)||!(t>0))throw Error('Hãy chọn đủ “Từ ngày” và “Đến ngày”.');
+   if(f>t)throw Error('“Từ ngày” phải trước “Đến ngày” và không sau hôm nay.');
+   let s=f;$('load').disabled=true;msg('Đang tải '+sym+' khung '+TFN(tf)+'…');
+   while(s<=t){const k=await getJ(base+`&startTime=${s}&endTime=${t}&limit=1000`);if(g!==gen)return;
+    if(!k.length)break;out=out.concat(kl(k));s=k[k.length-1][0]+1;msg('Đang tải '+sym+' khung '+TFN(tf)+'… '+out.length+' nến');
+    if(out.length>=CAP){cut=out.length>CAP||s<=t;out=out.slice(0,CAP);break}
+    if(k.length<1000)break}}
+  else{
+   const n=Math.max(10,Math.min(CAP,Math.round(B.n)||500));$('n').value=n;B.n=n;keep();
+   let end=0;$('load').disabled=true;msg('Đang tải '+sym+' khung '+TFN(tf)+'…');
+   while(out.length<n){const lim=Math.min(1000,n-out.length),k=await getJ(base+`&limit=${lim}`+(end?`&endTime=${end}`:''));if(g!==gen)return;
+    if(!k.length)break;out=kl(k).concat(out);end=k[0][0]-1;msg('Đang tải '+sym+' khung '+TFN(tf)+'… '+out.length+'/'+n+' nến');
+    if(k.length<lim)break}}
+  out=out.filter(b=>b.o>0&&b.h>0&&b.l>0&&b.c>0);
+  if(out.length<2)throw Error('Binance không có đủ nến cho sản phẩm và khoảng thời gian này.')}
+ catch(e){if(g!==gen)return;$('load').disabled=false;msg('');
+  $('err').textContent='Không tải được dữ liệu. '+(e instanceof TypeError?'Nếu bạn đang mở bản lưu trong claude.ai thì bản này không được phép kết nối ra ngoài, hãy mở bản trên GitHub Pages. Nếu không, hãy kiểm tra mạng. ':'')+'Chi tiết: '+e.message;return}
+ $('load').disabled=false;
+ /* Điền nến vào ô dữ liệu của Lab rồi đặt lại mô phỏng với phương pháp và thông số đang chọn */
+ D('csv').value='time,open,high,low,close\n'+out.map(b=>[ts(b.t),b.o,b.h,b.l,b.c].join(',')).join('\n');
+ D('mode').value='auto';D('mode').onchange();
+ const a=out[0].o,z=out[out.length-1],c=dp(a);let hi=-Infinity,lo=Infinity;for(const b of out){if(b.h>hi)hi=b.h;if(b.l<lo)lo=b.l}
+ const ch=(z.c/a-1)*100,info=sym+' · '+out.length+' nến '+TFN(tf)+' · '+dt(out[0].t)+' → '+dt(z.t);
+ msg('Đã tải '+info+'\nGiá đầu '+fmt(a,c)+' → giá mới nhất '+fmt(z.c,c)+' ('+(ch>0?'+':'')+fmt(ch,2)+'%) · cao nhất '+fmt(hi,c)+' · thấp nhất '+fmt(lo,c)+(cut?'\nChỉ lấy '+CAP+' nến đầu của khoảng ngày đã chọn. Muốn xem hết hãy chọn khung nến lớn hơn hoặc rút ngắn khoảng ngày.':'')+'\nNến cuối có thể chưa đóng (đang chạy).');
+ $('stat').style.whiteSpace='pre-line';
+ reset();if(S)D('stat').textContent='Đã nạp '+info+' từ Binance. Bấm “▶ Chạy tự động” để chạy. Đổi phương pháp hoặc thông số thì bấm “Đặt lại với thông số này”.'}
+$('tf').innerHTML=LIVE_TF.map(t=>`<option value="${t[0]}">${t[1]}</option>`).join('');
+opts();$('tf').value=B.tf;if(!$('tf').value)$('tf').value='1h';$('rg').value=B.rg=='d'?'d':'n';$('n').value=B.n||500;$('from').value=B.from;$('to').value=B.to;rg();
+$('rg').onchange=()=>{rg();readB()};
+for(const k of ['sym','tf','n','from','to'])$(k).onchange=readB;
+$('load').onclick=load;
+})();
 </script>
 
 <script>
@@ -892,8 +973,7 @@ fill();
 <script>
 /* ===== Tab Giá trực tuyến: nến Binance (REST lịch sử + WebSocket thời gian thực) ===== */
 (()=>{
-const SY=[['BTCUSDT','Bitcoin'],['ETHUSDT','Ethereum'],['BNBUSDT','BNB'],['SOLUSDT','Solana'],['XRPUSDT','XRP'],['PAXGUSDT','PAX Gold (token vàng)'],['XAUTUSDT','Tether Gold (token vàng)']];
-const TF=[['1m','M1'],['5m','M5'],['15m','M15'],['1h','H1'],['4h','H4'],['1d','D1']];
+const SY=LIVE_SY,TF=LIVE_TF;
 const REST=['https://data-api.binance.vision','https://api.binance.com'];
 const WSS=['wss://data-stream.binance.vision','wss://stream.binance.com:9443'];
 const L={sym:'BTCUSDT',tf:'15m',c:[],ws:null,rt:0,retry:0,gen:0,view:90,off:0,cross:-1,rate:0,tk:null,started:false,raf:0};
@@ -999,7 +1079,7 @@ $('luse').onclick=()=>{if(!L.c.length){$('lerr').textContent='Chưa có nến n�
 function show(t){if(!['lab','gop','loc','gia'].includes(t))t='lab';const live=t==='gia';
  [['lab','tabLab','tbLab'],['gop','tabGop','tbGop'],['loc','tabLoc','tbLoc'],['gia','tabLive','tbLive']].forEach(([k,p,b])=>{$(p).hidden=k!==t;$(b).classList.toggle('on',k===t)});
  try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t)}catch(e){}
- if(live){if(!L.started){L.started=true;load()}else{if(!L.ws&&!L.rt)conn(L.gen,0);paint()}}else if(t==='lab'&&S)charts()}
+ if(live){if(!L.started){L.started=true;load()}else{if(!L.ws&&!L.rt)conn(L.gen,0);paint()}}else if(t==='lab'){if(window.tlLabSyms)window.tlLabSyms(L.sym);if(S)charts()}}
 window.tlShow=show;
 $('tbLab').onclick=()=>show('lab');$('tbGop').onclick=()=>show('gop');$('tbLoc').onclick=()=>show('loc');$('tbLive').onclick=()=>show('gia');
 addEventListener('hashchange',()=>show(location.hash.slice(1)));
