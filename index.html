@@ -85,13 +85,19 @@ button.x{background:transparent;color:var(--dn);border:1px solid var(--dn)}
 .tfs button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
 #lc{height:min(60vh,420px);touch-action:pan-y;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
 .ins{display:flex;gap:6px}.ins button{flex:none}
+@media (max-width:440px){.tabs{gap:4px}.tab{font-size:13px;padding:6px 3px;line-height:1.25}}
+/* Lọc sản phẩm */
+label.chk{flex-direction:row;align-items:center;gap:10px;margin-top:10px;font-size:13.5px;color:var(--tx)}
+label.chk input{width:22px;height:22px;flex:none;margin:0}
+#tabLoc tr[data-s]{cursor:pointer}#tabLoc tr.fade{opacity:.45}#tabLoc tr.sel td{background:rgba(37,99,235,.13)}
+#tabLoc #f_detB button{flex:1 1 140px}
 </style>
 </head>
 <body>
 <main>
 <h1>Trading Lab</h1>
-<p class="sub">Mô phỏng phương pháp, trợ lý đặt lệnh trên sàn gộp lệnh và giá trực tuyến.</p>
-<nav class="tabs"><button class="tab on" id="tbLab">Lab mô phỏng</button><button class="tab" id="tbGop">Trợ lý gộp lệnh</button><button class="tab" id="tbLive">Giá trực tuyến</button></nav>
+<p class="sub">Mô phỏng phương pháp, trợ lý đặt lệnh trên sàn gộp lệnh, lọc sản phẩm theo phương pháp và giá trực tuyến.</p>
+<nav class="tabs"><button class="tab on" id="tbLab">Lab mô phỏng</button><button class="tab" id="tbGop">Trợ lý gộp lệnh</button><button class="tab" id="tbLoc">Lọc sản phẩm</button><button class="tab" id="tbLive">Giá trực tuyến</button></nav>
 
 <div id="tabLive" hidden>
 <section class="card">
@@ -192,6 +198,65 @@ button.x{background:transparent;color:var(--dn);border:1px solid var(--dn)}
 <section class="card">
 <h2 id="g_notesT">Giả định</h2>
 <ul id="g_notes"></ul>
+</section>
+</div>
+
+<div id="tabLoc" hidden>
+<p class="sub">Tải nến lịch sử của nhiều sản phẩm từ Binance, chạy thử các phương pháp trên đó và xếp hạng sản phẩm hợp với phương pháp bạn chọn. Chỉ đọc giá, không giao dịch.</p>
+
+<section class="card">
+<h2>1. Phương pháp</h2>
+<label>Tìm sản phẩm cho phương pháp<select id="f_m"></select></label>
+<div class="mcard" id="f_minfo" style="margin-top:10px;cursor:default"></div>
+</section>
+
+<section class="card">
+<h2>2. Sản phẩm và dữ liệu</h2>
+<div class="grid">
+ <label>Nguồn danh sách<select id="f_src"><option value="top">Giao dịch nhiều nhất 24 giờ (Binance)</option><option value="list">Danh sách tự nhập</option></select></label>
+ <label id="f_topW">Số sản phẩm<select id="f_top"><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="50">50</option></select></label>
+ <label>Khung nến<select id="f_tf"><option value="1h">H1</option><option value="4h">H4</option><option value="1d">D1</option></select></label>
+ <label>Số nến (50–1000)<input id="f_n" type="number" min="50" max="1000" step="1" inputmode="numeric"></label>
+ <label>Khoảng cách lưới (% của giá khởi tạo)<input id="f_step" type="number" step="any" min="0" inputmode="decimal"></label>
+</div>
+<label id="f_listW" style="margin-top:10px" hidden>Mã sản phẩm theo Binance, cách nhau bằng dấu phẩy hoặc xuống dòng (tối đa 100 mã)<textarea id="f_list" autocapitalize="characters" autocomplete="off"></textarea></label>
+<div class="row"><button id="f_run">Bắt đầu lọc</button><button class="s" id="f_stop">Dừng</button></div>
+<div class="st" id="f_stat">Chọn phương pháp và nguồn sản phẩm rồi bấm “Bắt đầu lọc”.</div>
+<div class="err" id="f_err"></div>
+</section>
+
+<section class="card">
+<h2>3. Bộ lọc</h2>
+<div class="grid">
+ <label>Xu hướng giá<select id="f_tr"><option value="all">Tất cả</option><option value="side">Đi ngang (độ mạnh &lt; 0,7)</option><option value="sideup">Đi ngang hoặc tăng</option><option value="up">Đang tăng (độ mạnh ≥ 0,7)</option><option value="dn">Đang giảm (độ mạnh ≥ 0,7)</option><option value="trend">Có xu hướng rõ, lên hoặc xuống (độ mạnh ≥ 1)</option></select></label>
+ <label>Số lần chạm mắc tối thiểu mỗi nến<input id="f_tc" type="number" step="any" min="0" inputmode="decimal"></label>
+ <label>Giao dịch 24 giờ tối thiểu (triệu tiền mặt)<input id="f_vol" type="number" step="any" min="0" inputmode="decimal"></label>
+ <label>Sắp xếp theo<select id="f_sort"><option value="bt">Kết quả chạy thử (cao → thấp)</option><option value="tc">Số lần chạm mắc mỗi nến</option><option value="vo">Biến động mỗi nến</option><option value="zl">Xu hướng yếu nhất trước</option><option value="zh">Xu hướng mạnh nhất trước</option><option value="vol">Giao dịch 24 giờ</option></select></label>
+</div>
+<label class="chk"><input type="checkbox" id="f_pos"> Chỉ giữ sản phẩm có lãi khi chạy thử phương pháp đang chọn</label>
+<label class="chk"><input type="checkbox" id="f_all"> Hiện cả sản phẩm không đạt bộ lọc (chữ mờ)</label>
+<p class="cap" style="margin-top:8px">Đổi phương pháp sẽ đặt lại bộ lọc xu hướng theo gợi ý của phương pháp đó. Bộ lọc áp dụng ngay, không cần tải lại.</p>
+</section>
+
+<section class="card" id="f_resC" hidden>
+<h2>4. Kết quả</h2>
+<p class="st" id="f_sum" style="margin-top:0"></p>
+<div class="sc"><table id="f_tb"></table></div>
+<p class="cap" style="margin-top:8px">Chạm vào một dòng để xem chi tiết các phương pháp và đưa sản phẩm vào Lab mô phỏng.</p>
+<p class="cap wn" id="f_fail"></p>
+</section>
+
+<section class="card" id="f_detC" hidden>
+<h2 id="f_detT">Chi tiết</h2>
+<div class="m" id="f_detM"></div>
+<p class="cap" style="margin-top:12px">Chạy thử từng phương pháp trên cùng dữ liệu (các số % tính trên vốn chiếm dụng tối đa của phương pháp đó)</p>
+<div class="sc"><table id="f_detTb"></table></div>
+<div class="row" id="f_detB"></div>
+</section>
+
+<section class="card">
+<h2>Cách đọc kết quả</h2>
+<ul id="f_notes"></ul>
 </section>
 </div>
 
@@ -679,6 +744,152 @@ renderForm();renderBooks();
 </script>
 
 <script>
+/* ===== Tab Lọc sản phẩm: tải nến lịch sử, chạy thử các phương pháp của Lab, xếp hạng sản phẩm ===== */
+(()=>{
+const $=id=>document.getElementById('f_'+id),D=id=>document.getElementById(id);
+const REST=['https://data-api.binance.vision','https://api.binance.com'];
+const TFN={'1h':'H1','4h':'H4','1d':'D1'};
+const NET='Nếu bạn đang mở bản lưu trong claude.ai thì bản này không được phép kết nối ra ngoài, hãy mở bản trên GitHub Pages. Nếu không, hãy kiểm tra mạng.';
+const DEF_LIST='BTCUSDT, ETHUSDT, BNBUSDT, SOLUSDT, XRPUSDT, ADAUSDT, DOGEUSDT, LINKUSDT, AVAXUSDT, DOTUSDT, LTCUSDT, TRXUSDT, PAXGUSDT';
+/* Gợi ý cho từng phương pháp: loại sản phẩm hợp và bộ lọc xu hướng mặc định */
+const HINT={
+ buygrid:{tr:'side',t:'Sản phẩm đi ngang, giá dao động lên xuống nhiều lần quanh một vùng (chạm mắc nhiều). Kém khi giá giảm kéo dài vì ôm nhiều lệnh lỗ.'},
+ infinity:{tr:'side',t:'Sản phẩm đi ngang, giá cuối gần giá đầu, dao động đều. Kém khi giá giảm sâu kéo dài (hết tiền mặt) hoặc tăng một chiều mạnh (bán hết phần ban đầu sớm).'},
+ momentum:{tr:'trend',t:'Sản phẩm có xu hướng rõ, đi một chiều mạnh (lên hoặc xuống). Kém khi giá đi ngang giật qua lại vì số lệnh mỗi mắc tăng dần.'},
+ buyrb:{tr:'sideup',t:'Sản phẩm đi ngang hoặc đang tăng. Đỡ hơn PP1 khi giá giảm vì không mua lúc giá đi xuống, nhưng bỏ lỡ các mắc đáy.'}};
+/* Mã tiền mặt ổn định: bỏ khỏi danh sách “giao dịch nhiều nhất” */
+const STABLE=/^(USDC|FDUSD|TUSD|BUSD|DAI|USDP|USDE|PYUSD|USD1|BFUSD|RLUSD|XUSD|AEUR|EUR|EURI|GBP|TRY|BRL|USDS|UST|USTC|PAX|SUSD|GUSD)$/;
+const KEYS=Object.keys(METHODS),NM=k=>'PP'+(KEYS.indexOf(k)+1),SN=k=>NM(k)+': '+METHODS[k].name.split(' (')[0];
+const F={m:KEYS[0],src:'top',top:'20',tf:'4h',n:500,step:1,list:DEF_LIST,tr:'side',tc:0,vol:0,sort:'bt',pos:false,all:false};
+try{const v=JSON.parse(localStorage.getItem('tl_loc')||'{}');if(v&&typeof v=='object')Object.assign(F,v)}catch(e){}
+if(!METHODS[F.m])F.m=KEYS[0];
+const keep=()=>{try{localStorage.setItem('tl_loc',JSON.stringify(F))}catch(e){}};
+let R=[],selSym=null,run=0,meta=null;
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pct=(v,d=2)=>v==null||!isFinite(v)?'–':(v>0?'+':'')+fmt(v,d)+'%';
+const dd2=t=>{const d=new Date(t),q=v=>String(v).padStart(2,'0');return q(d.getDate())+'/'+q(d.getMonth()+1)+'/'+d.getFullYear()};
+const stat=t=>{$('stat').textContent=t};
+
+/* ----- Đọc / ghi ô nhập ----- */
+function fill(){$('m').innerHTML=KEYS.map(k=>`<option value="${k}">${esc(SN(k))}</option>`).join('');
+ for(const k of ['m','src','top','tf','n','step','list','tr','tc','vol','sort'])$(k).value=F[k];
+ $('pos').checked=!!F.pos;$('all').checked=!!F.all;src();minfo()}
+function readF(){for(const k of ['m','src','top','tf','list','tr','sort'])F[k]=$(k).value;
+ for(const k of ['n','step','tc','vol'])F[k]=parseFloat($(k).value);F.pos=$('pos').checked;F.all=$('all').checked;keep()}
+function src(){const l=$('src').value=='list';$('listW').hidden=!l;$('topW').hidden=l}
+function minfo(){const k=$('m').value,m=METHODS[k],h=HINT[k];
+ $('minfo').innerHTML='<b>'+esc(SN(k))+'</b><small>'+esc(m.tag)+'</small><p>'+esc(m.desc)+'</p>'+(h?'<p><span style="color:var(--tx);font-weight:600">Sản phẩm hợp:</span> '+esc(h.t)+'</p>':'')}
+
+/* ----- Đặc điểm giá: xu hướng, biến động, số lần chạm mắc, sụt giảm ----- */
+function stats(B,step){const a=B[0].o,st=a*step/100,E=1e-9;let pk=a,dd=0,tc=0,vo=0,x=a;const lr=[];
+ for(let i=0;i<B.length;i++){const b=B[i];vo+=(b.h-b.l)/b.o;
+  for(const y of PTS(b)){if(y>pk)pk=y;dd=Math.max(dd,(pk-y)/pk);
+   if(y>x)tc+=Math.floor((y-a)/st+E)-Math.floor((x-a)/st+E);else if(y<x)tc+=Math.ceil((x-a)/st-E)-Math.ceil((y-a)/st-E);x=y}
+  if(i)lr.push(Math.log(b.c/B[i-1].c))}
+ const n=lr.length,mu=lr.reduce((s,v)=>s+v,0)/Math.max(1,n),sd=Math.sqrt(lr.reduce((s,v)=>s+(v-mu)**2,0)/Math.max(1,n-1)),c=B[B.length-1].c;
+ /* Độ mạnh xu hướng: |log(giá cuối/giá đầu)| so với mức dao động ngẫu nhiên kỳ vọng σ·√n */
+ const z=sd>0?Math.abs(Math.log(c/a))/(sd*Math.sqrt(B.length)):0;
+ return{chg:(c/a-1)*100,z,vo:vo/B.length*100,tc:tc/B.length,dd:dd*100,a,c}}
+const trLabel=s=>s.z<0.7?'Đi ngang':(s.chg>0?'Tăng':'Giảm')+(s.z<1.5?' nhẹ':' mạnh');
+
+/* ----- Chạy thử một phương pháp của Lab (giữ nguyên logic, thông số mặc định, lưới theo %) ----- */
+function params(k,step){const p={};METHODS[k].params.forEach(q=>{p[q.k]=q.v});if('mode' in p)p.mode='pct';p.step=step;return p}
+function test(k,B,step){try{const s=METHODS[k].make(params(k,step),B[0].o);
+  for(const b of B)for(const y of PTS(b))if(Math.abs(y-s.x)>1e-12)s.feed(y);
+  const N=s.maxNot,P=v=>N>0?v/N*100:null;
+  return{rc:P(s.real+s.fl),re:P(s.real),fl:P(s.fl),dd:P(s.dd),mo:s.maxOpen,cy:s.cyc}}
+ catch(e){return{e:e.message}}}
+function calc(r,step){r.s=stats(r.B,step);r.bt={};r.best=null;
+ for(const k of KEYS){const t=test(k,r.B,step);r.bt[k]=t;if(t.rc!=null&&(!r.best||t.rc>r.bt[r.best].rc))r.best=k}}
+
+/* ----- Tải dữ liệu từ Binance ----- */
+async function getJ(path){let e;for(const b of REST){try{const r=await fetch(b+path,{cache:'no-store'});
+  if(!r.ok){const t=await r.text().catch(()=>'');throw Error('HTTP '+r.status+(/invalid symbol/i.test(t)?' – mã không có trên Binance':''))}return await r.json()}catch(x){e=x}}throw e}
+async function symbols(){
+ if(F.src=='list'){const v=[...new Set(F.list.toUpperCase().split(/[\s,;]+/).map(s=>s.replace(/[^A-Z0-9]/g,'')).filter(s=>/^[A-Z0-9]{5,20}$/.test(s)))];
+  if(!v.length)throw Error('Danh sách chưa có mã hợp lệ. Ví dụ: BTCUSDT, ETHUSDT.');return v.slice(0,100).map(s=>({sym:s,vol:null}))}
+ const T=await getJ('/api/v3/ticker/24hr?type=MINI');
+ return T.filter(t=>/^[A-Z0-9]+USDT$/.test(t.symbol)).map(t=>({sym:t.symbol,vol:+t.quoteVolume})).filter(t=>t.vol>0&&!STABLE.test(t.sym.slice(0,-4))).sort((u,v)=>v.vol-u.vol).slice(0,+F.top||20)}
+async function start(){readF();const g=++run;$('err').textContent='';
+ const n=Math.max(50,Math.min(1000,Math.round(F.n)||500)),step=F.step;$('n').value=n;F.n=n;keep();
+ if(!(step>0)){$('err').textContent='Khoảng cách lưới phải lớn hơn 0.';return}
+ R=[];selSym=null;render();stat('Đang lấy danh sách sản phẩm…');
+ let L;try{L=await symbols()}catch(e){if(g!==run)return;stat('Chưa lọc được.');$('err').textContent='Không lấy được danh sách sản phẩm. '+(e instanceof TypeError?NET+' ':'')+'Chi tiết: '+e.message;return}
+ if(g!==run)return;
+ meta={tf:F.tf,n,step,fail:[],tot:L.length};let i=0,done=0;
+ const work=async()=>{while(i<L.length&&g===run){const it=L[i++];
+  try{const k=await getJ(`/api/v3/klines?symbol=${it.sym}&interval=${meta.tf}&limit=${n}`);if(g!==run)return;
+   const B=k.map(r=>({t:r[0],o:+r[1],h:+r[2],l:+r[3],c:+r[4]})).filter(b=>b.o>0&&b.h>0&&b.l>0&&b.c>0);
+   if(B.length<30)throw Error('chỉ có '+B.length+' nến');
+   if(it.vol==null){try{const t=await getJ('/api/v3/ticker/24hr?type=MINI&symbol='+it.sym);it.vol=+t.quoteVolume}catch(e){}}
+   if(g!==run)return;const r={sym:it.sym,vol:it.vol,B};calc(r,step);R.push(r)}
+  catch(e){if(g!==run)return;meta.fail.push(it.sym+' ('+e.message+')')}
+  done++;stat('Đang tải và chạy thử '+done+'/'+L.length+' · '+it.sym+'…');render()}};
+ await Promise.all([work(),work(),work()]);
+ if(g!==run)return;
+ if(!R.length){stat('Chưa lọc được.');$('err').textContent='Không tải được nến của sản phẩm nào. '+NET;render();return}
+ stat('Đã lọc '+R.length+'/'+L.length+' sản phẩm · khung '+TFN[meta.tf]+' · '+n+' nến · lưới '+fmt(step,4)+'%.');render()}
+function stop(){if(!meta||meta.tot==null){run++;return}run++;stat('Đã dừng. Kết quả dưới đây chỉ gồm '+R.length+' sản phẩm đã tải xong.');render()}
+
+/* ----- Bộ lọc, sắp xếp, hiển thị ----- */
+function trOk(s){const u=s.chg>0;switch(F.tr){case'side':return s.z<0.7;case'sideup':return s.z<0.7||u;case'up':return s.z>=0.7&&u;case'dn':return s.z>=0.7&&!u;case'trend':return s.z>=1;default:return true}}
+function pass(r){const b=r.bt[F.m];return trOk(r.s)&&r.s.tc>=(F.tc>0?F.tc:0)&&(!(F.vol>0)||(r.vol!=null&&r.vol>=F.vol*1e6))&&(!F.pos||(b&&b.rc>0))}
+const SK={bt:r=>{const b=r.bt[F.m];return b&&b.rc!=null?b.rc:-Infinity},tc:r=>r.s.tc,vo:r=>r.s.vo,zl:r=>-r.s.z,zh:r=>r.s.z,vol:r=>r.vol??-1};
+function render(){const C=$('resC');if(!R.length){C.hidden=true;$('detC').hidden=true;return}C.hidden=false;
+ const k=F.m,key=SK[F.sort]||SK.bt,L=R.map(r=>({r,ok:pass(r)})).sort((u,v)=>(v.ok-u.ok)||(key(v.r)-key(u.r))),ok=L.filter(x=>x.ok).length,sh=F.all?L:L.filter(x=>x.ok);
+ const bw=R.filter(r=>r.best==k).length;
+ $('sum').textContent=ok+'/'+R.length+' sản phẩm đạt bộ lọc cho '+SN(k)+' · '+bw+' sản phẩm có '+NM(k)+' là phương pháp cho kết quả chạy thử cao nhất.';
+ const v=x=>x.e?'<span class="wn">lỗi</span>':x.rc==null?'–':`<b class="${cls(x.rc)}">${pct(x.rc)}</b>`;
+ let j=0;
+ $('tb').innerHTML='<tr><th>#</th><th>Sản phẩm</th><th>Chạy thử '+NM(k)+'</th><th>PP hợp nhất</th><th>Xu hướng · độ mạnh</th><th>Thay đổi giá</th><th>Biến động/nến</th><th>Chạm mắc/nến</th><th>Sụt giảm giá tối đa</th><th>GD 24 giờ</th></tr>'+
+  (sh.length?sh.map(x=>{const r=x.r,s=r.s,b=r.bt[k];return`<tr data-s="${esc(r.sym)}" class="${x.ok?'':'fade'}${r.sym==selSym?' sel':''}"><td>${x.ok?++j:'–'}</td><td><b>${esc(r.sym)}</b></td><td>${v(b)}</td><td>${r.best?(r.best==k?'<b>★ ':'')+NM(r.best)+' · '+pct(r.bt[r.best].rc,1)+(r.best==k?'</b>':''):'–'}</td><td>${trLabel(s)} · ${fmt(s.z,2)}</td><td class="${cls(s.chg)}">${pct(s.chg)}</td><td>${fmt(s.vo,2)}%</td><td>${fmt(s.tc,2)}</td><td>${fmt(s.dd,1)}%</td><td>${r.vol!=null&&isFinite(r.vol)?fmt(r.vol/1e6,1)+' tr':'–'}</td></tr>`}).join('')
+  :'<tr><td colspan="10" style="text-align:left;white-space:normal;color:var(--mu)">Không có sản phẩm nào đạt bộ lọc. Hãy nới bộ lọc hoặc bật “Hiện cả sản phẩm không đạt bộ lọc”.</td></tr>');
+ $('fail').textContent=meta&&meta.fail.length?'Không tải được: '+meta.fail.join(', '):'';
+ detail()}
+function detail(){const r=R.find(x=>x.sym==selSym),C=$('detC');if(!r){C.hidden=true;return}C.hidden=false;const s=r.s,B=r.B,dc=s.a>=1000?2:s.a>=10?3:s.a>=1?4:6;
+ $('detT').textContent='Chi tiết · '+r.sym;
+ $('detM').innerHTML=[['Xu hướng',trLabel(s)+' · '+fmt(s.z,2),''],['Thay đổi giá',pct(s.chg),cls(s.chg)],['Giá đầu → cuối',fmt(s.a,dc)+' → '+fmt(s.c,dc),''],['Biến động TB mỗi nến',fmt(s.vo,2)+'%',''],['Chạm mắc mỗi nến',fmt(s.tc,2),''],['Sụt giảm giá tối đa',fmt(s.dd,1)+'%',''],['Giao dịch 24 giờ',r.vol!=null&&isFinite(r.vol)?fmt(r.vol/1e6,1)+' triệu':'–',''],['Dữ liệu',B.length+' nến '+TFN[meta.tf]+' · '+dd2(B[0].t)+' → '+dd2(B[B.length-1].t),'']]
+  .map(m=>`<div><span>${m[0]}</span><b class="${m[2]}">${m[1]}</b></div>`).join('');
+ const c=v=>`<td class="${cls(v||0)}">${pct(v)}</td>`;
+ $('detTb').innerHTML='<tr><th>Phương pháp</th><th>Tổng lãi/lỗ</th><th>Đã chốt</th><th>Thả nổi</th><th>Sụt giảm tối đa</th><th>Lệnh/lô mở tối đa</th><th>Số lần cắt/bán</th></tr>'+
+  KEYS.map(k=>{const t=r.bt[k],nm=(k==r.best?'★ ':'')+esc(SN(k)),w=k==F.m?'font-weight:700':'';
+   return t.e?`<tr style="${w}"><td>${nm}</td><td colspan="6" class="wn" style="text-align:left">${esc(t.e)}</td></tr>`:`<tr style="${w}"><td>${nm}</td>${c(t.rc)}${c(t.re)}${c(t.fl)}<td>${t.dd==null?'–':fmt(t.dd,2)+'%'}</td><td>${fmt(t.mo,0)}</td><td>${fmt(t.cy,0)}</td></tr>`}).join('');
+ $('detB').innerHTML=KEYS.map(k=>`<button class="${k==F.m?'':'s'}" data-k="${k}">Thử ${NM(k)} trong Lab</button>`).join('')}
+
+/* ----- Đưa sản phẩm vào Lab mô phỏng với đúng thông số đã chạy thử ----- */
+function toLab(r,k){const p=params(k,meta.step),B=r.B,q=v=>String(v).padStart(2,'0'),ts=t=>{const d=new Date(t);return d.getFullYear()+'-'+q(d.getMonth()+1)+'-'+q(d.getDate())+' '+q(d.getHours())+':'+q(d.getMinutes())};
+ D('csv').value='time,open,high,low,close\n'+B.map(b=>[ts(b.t),b.o,b.h,b.l,b.c].join(',')).join('\n');
+ D('mode').value='auto';D('mode').onchange();
+ D('method').value=k;D('method').onchange();
+ for(const [n,v] of Object.entries(p)){const el=D('p_'+n);if(el)el.value=v}
+ if(window.tlShow)window.tlShow('lab');reset();
+ D('stat').textContent='Đã nạp '+B.length+' nến '+r.sym+' khung '+TFN[meta.tf]+' từ tab Lọc sản phẩm · '+SN(k)+' · lưới '+fmt(meta.step,4)+'%. Bấm “▶ Chạy tự động” để chạy hết, kết quả sẽ khớp với bảng chạy thử.';
+ scrollTo({top:0})}
+
+/* ----- Sự kiện ----- */
+$('run').onclick=start;$('stop').onclick=stop;
+$('src').onchange=()=>{src();readF()};
+$('m').onchange=()=>{const h=HINT[$('m').value];if(h)$('tr').value=h.tr;minfo();readF();render()};
+for(const k of ['tr','tc','vol','sort','pos','all'])$(k).addEventListener(k=='tc'||k=='vol'?'input':'change',()=>{readF();render()});
+$('list').oninput=readF;$('top').onchange=readF;
+$('tf').onchange=$('n').onchange=()=>{readF();if(R.length)stat('Khung nến hoặc số nến đã đổi: bấm “Bắt đầu lọc” để tải lại dữ liệu.')};
+$('step').onchange=()=>{readF();if(!R.length||!meta)return;if(!(F.step>0)){$('err').textContent='Khoảng cách lưới phải lớn hơn 0.';return}
+ $('err').textContent='';meta.step=F.step;R.forEach(r=>calc(r,F.step));stat('Đã chạy thử lại '+R.length+' sản phẩm với lưới '+fmt(F.step,4)+'% (dùng nến đã tải).');render()};
+$('tb').onclick=e=>{const t=e.target.closest('tr[data-s]');if(!t)return;selSym=selSym==t.dataset.s?null:t.dataset.s;render();if(selSym)$('detC').scrollIntoView({behavior:'smooth',block:'start'})};
+$('detB').onclick=e=>{const b=e.target.closest('button[data-k]'),r=R.find(x=>x.sym==selSym);if(b&&r)toLab(r,b.dataset.k)};
+$('notes').innerHTML=['Nguồn giá: dữ liệu thị trường công khai của Binance, chỉ đọc giá, không giao dịch. Bản lưu trong claude.ai không lấy được giá, hãy mở bản trên GitHub Pages.',
+ '“Chạy thử” = chạy đúng phương pháp như Lab mô phỏng trên các nến đã tải (mỗi nến đi O→L→H→C hoặc O→H→L→C), lưới theo % của giá mở nến đầu tiên, các thông số khác lấy mặc định của Lab. Kết quả = tổng lãi/lỗ (đã chốt + thả nổi) chia vốn chiếm dụng tối đa, giống cột “Lãi / vốn chiếm dụng tối đa” ở Lab. Không tính phí, thuế.',
+ '“PP hợp nhất” = phương pháp có kết quả chạy thử cao nhất trên cùng dữ liệu (★ khi trùng phương pháp đang chọn). PP3 là giao dịch CFD (có bán khống), các phương pháp khác là spot.',
+ 'Độ mạnh xu hướng = |log(giá cuối ÷ giá đầu)| ÷ (độ lệch chuẩn thay đổi giá mỗi nến × √số nến). Giá đi ngẫu nhiên thường cho 0–1. Dưới 0,7: đi ngang · 0,7–1,5: xu hướng nhẹ · từ 1,5: xu hướng mạnh.',
+ 'Chạm mắc mỗi nến = số lần giá đi qua một mắc lưới chia số nến. Càng cao thì phương pháp lưới càng có nhiều lần mua, bán hoặc cắt. Chỉ số này đổi theo khoảng cách lưới.',
+ 'Biến động mỗi nến = trung bình (cao − thấp) ÷ giá mở. Sụt giảm giá tối đa = mức giảm lớn nhất tính từ đỉnh trước đó.',
+ 'Nguồn “giao dịch nhiều nhất” lấy các mã niêm yết bằng tiền mặt (USDT) trên Binance, bỏ các mã tiền mặt ổn định (USDC, FDUSD…). Giao dịch 24 giờ tính bằng triệu tiền mặt.',
+ 'Kết quả quá khứ không bảo đảm tương lai. Nên thử lại với khung nến, số nến và khoảng lưới khác, rồi đưa sản phẩm vào Lab để xem từng bước.'].map(t=>'<li>'+t+'</li>').join('');
+fill();
+})();
+</script>
+
+<script>
 /* ===== Tab Giá trực tuyến: nến Binance (REST lịch sử + WebSocket thời gian thực) ===== */
 (()=>{
 const SY=[['BTCUSDT','Bitcoin'],['ETHUSDT','Ethereum'],['BNBUSDT','BNB'],['SOLUSDT','Solana'],['XRPUSDT','XRP'],['PAXGUSDT','PAX Gold (token vàng)'],['XAUTUSDT','Tether Gold (token vàng)']];
@@ -785,11 +996,12 @@ $('luse').onclick=()=>{if(!L.c.length){$('lerr').textContent='Chưa có nến n�
  $('mode').value='auto';$('mode').onchange();show('lab');
  $('stat').textContent='Đã nạp '+B.length+' nến '+L.sym+' khung '+(TF.find(t=>t[0]==L.tf)||[0,L.tf])[1]+' từ tab Giá trực tuyến. Chọn phương pháp rồi bấm “Đặt lại với thông số này”.';
  scrollTo({top:0})};
-function show(t){if(!['lab','gop','gia'].includes(t))t='lab';const live=t==='gia';
- [['lab','tabLab','tbLab'],['gop','tabGop','tbGop'],['gia','tabLive','tbLive']].forEach(([k,p,b])=>{$(p).hidden=k!==t;$(b).classList.toggle('on',k===t)});
+function show(t){if(!['lab','gop','loc','gia'].includes(t))t='lab';const live=t==='gia';
+ [['lab','tabLab','tbLab'],['gop','tabGop','tbGop'],['loc','tabLoc','tbLoc'],['gia','tabLive','tbLive']].forEach(([k,p,b])=>{$(p).hidden=k!==t;$(b).classList.toggle('on',k===t)});
  try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t)}catch(e){}
  if(live){if(!L.started){L.started=true;load()}else{if(!L.ws&&!L.rt)conn(L.gen,0);paint()}}else if(t==='lab'&&S)charts()}
-$('tbLab').onclick=()=>show('lab');$('tbGop').onclick=()=>show('gop');$('tbLive').onclick=()=>show('gia');
+window.tlShow=show;
+$('tbLab').onclick=()=>show('lab');$('tbGop').onclick=()=>show('gop');$('tbLoc').onclick=()=>show('loc');$('tbLive').onclick=()=>show('gia');
 addEventListener('hashchange',()=>show(location.hash.slice(1)));
 addEventListener('resize',paint);
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',paint);
