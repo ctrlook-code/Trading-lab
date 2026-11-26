@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Trading Lab">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Trading Lab</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1b1f24;--mu:#6b7480;--bd:#e1e5ea;--ac:#2563eb;--up:#16a34a;--dn:#dc2626;--wn:#b45309;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111418;--card:#1a1f26;--tx:#e8ebef;--mu:#98a2b0;--bd:#2c333d;--ac:#6ea0ff;--up:#4ade80;--dn:#f87171;--wn:#fbbf24;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111418;--card:#1a1f26;--tx:#e8ebef;--mu:#98a2b0;--bd:#2c333d;--ac:#6ea0ff;--up:#4ade80;--dn:#f87171;--wn:#fbbf24;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:980px;margin:0 auto;padding:12px}
+h1{font-size:20px;margin:6px 0 2px}h2{font-size:15px;margin:0 0 10px}
+.sub{color:var(--mu);font-size:13px;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--mu)}
+input,select,textarea{font:inherit;font-size:16px;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px;width:100%;box-sizing:border-box}
+textarea{min-height:90px;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:10px 14px;background:var(--ac);color:#fff;cursor:pointer}
+button.s{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+button.u{background:var(--up);color:#06210f}button.d{background:var(--dn);color:#fff}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.row button{flex:1 1 130px}
+.m{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.m div{background:var(--bg);border-radius:8px;padding:8px 10px}
+.m b{display:block;font-size:17px}.m span{font-size:12px;color:var(--mu)}
+.pos{color:var(--up)}.neg{color:var(--dn)}
+canvas{width:100%;height:200px;display:block}
+.cap{font-size:12px;color:var(--mu);margin:2px 0 8px}
+.st{font-size:14px;margin-top:12px;padding:8px 10px;background:var(--bg);border-radius:8px}
+.sc{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:12.5px;white-space:nowrap}
+th,td{padding:6px 8px;border-bottom:1px solid var(--bd);text-align:right}th:first-child,td:first-child{text-align:left}
+ul{margin:6px 0 0;padding-left:18px;font-size:13px;color:var(--mu)}
+.err{color:var(--dn);font-size:13px;margin-top:8px}
+#c1{height:280px}
+.mcard{border:1px solid var(--bd);border-radius:10px;padding:10px 12px;cursor:pointer;background:var(--bg)}
+.mcard.on{border-color:var(--ac);box-shadow:0 0 0 1px var(--ac)}
+.mcard b{display:block}.mcard small{color:var(--ac);font-size:11.5px}
+.mcard p{margin:4px 0 0;font-size:12.5px;color:var(--mu)}
+.mcard.add{border-style:dashed;cursor:default;opacity:.6}
+#lad{position:relative;max-height:340px;overflow-y:auto;border:1px solid var(--bd);border-radius:8px}
+.lr{display:flex;gap:10px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--bd);font-size:13px}
+.lr span{width:64px;color:var(--mu)}.lr b{width:84px}.lr em{flex:1;font-style:normal;color:var(--mu);text-align:right}
+.lr.op{border-left:3px solid var(--dn);background:var(--bg)}.lr.op em{color:var(--tx)}
+.lr.ini{border-left:3px solid var(--ac);background:var(--bg)}.lr.ini em{color:var(--tx)}
+.lr.pb{border-left:3px dashed var(--dn);background:var(--bg)}.lr.pb em{color:var(--tx)}
+.lr.p0{background:rgba(34,197,94,.22)}
+.lr.now{background:var(--ac);color:#fff}.lr.now.p0{background:var(--up)}.lr.now span,.lr.now b,.lr.now em,.lr.now i{color:#fff!important}.lr span{white-space:nowrap}
+[hidden]{display:none!important}
+/* Trợ lý gộp lệnh */
+.wn{color:var(--wn)}
+button.x{background:transparent;color:var(--dn);border:1px solid var(--dn)}
+#tabGop .grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+#tabGop .row{align-items:flex-end}#tabGop .row button{flex:1 1 120px}
+#tabGop textarea{min-height:110px}
+#tabGop .m{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}#tabGop .m b{font-size:16px}
+#tabGop .cap{margin:4px 0 8px}#tabGop .st{margin-top:10px}
+#tabGop td.l,#tabGop th.l{text-align:left;white-space:normal}
+#tabGop .order{font-size:18px;font-weight:700;padding:12px;border-radius:10px;margin:10px 0;text-align:center}
+#tabGop .order.b{background:rgba(22,163,74,.15);color:var(--up)}#tabGop .order.s{background:rgba(220,38,38,.13);color:var(--dn)}#tabGop .order.n{background:var(--bg);color:var(--mu);font-size:15px}
+#tabGop .acts{margin:6px 0 0;padding-left:18px;font-size:13px;color:var(--tx)}
+#tabGop .lr{padding:7px 10px}#tabGop .lr span{width:92px}#tabGop .lr b{flex:1;width:auto}#tabGop .lr em{flex:none;text-align:right;font-weight:600;color:inherit}
+#tabGop .lr em.pos{color:var(--up)}#tabGop .lr em.neg{color:var(--dn)}
+#tabGop .mcard{margin-top:10px;cursor:default}
+.tab{font-size:14px;padding:8px 6px}
+/* Tabs + Giá trực tuyến */
+.tabs{position:sticky;top:0;z-index:5;display:flex;gap:6px;background:var(--bg);padding:8px 0 10px}
+.tab{flex:1;min-height:44px;background:var(--card);color:var(--mu);border:1px solid var(--bd)}
+.tab.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.lhead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.lsym{font-size:17px;font-weight:700}
+.ldot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--mu);margin:0 4px 0 6px;vertical-align:1px}
+.ldot.ok{background:var(--up)}.ldot.warn{background:#f59e0b}.ldot.bad{background:var(--dn)}
+.lpx{text-align:left}.lpx b{font-size:26px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.lpx .cap{margin:0}
+.tfs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 8px}
+.tfs button{flex:1 1 40px;white-space:nowrap;min-height:40px;padding:8px 6px;background:var(--bg);color:var(--tx);border:1px solid var(--bd)}
+.tfs button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+#lc{height:min(60vh,420px);touch-action:pan-y;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
+.ins{display:flex;gap:6px}.ins button{flex:none}
+</style>
+</head>
+<body>
+<main>
+<h1>Trading Lab</h1>
+<p class="sub">Mô phỏng phương pháp, trợ lý đặt lệnh trên sàn gộp lệnh và giá trực tuyến.</p>
+<nav class="tabs"><button class="tab on" id="tbLab">Lab mô phỏng</button><button class="tab" id="tbGop">Trợ lý gộp lệnh</button><button class="tab" id="tbLive">Giá trực tuyến</button></nav>
+
+<div id="tabLive" hidden>
+<section class="card">
+<div class="lhead">
+ <div><span class="lsym" id="lname">BTCUSDT</span><span class="ldot" id="ldot"></span><span class="cap" id="lstat">Chưa kết nối</span><div class="cap" id="lhl"></div></div>
+ <div class="lpx"><b id="lpx">–</b><div id="lchg" class="cap"></div><div class="cap" id="lvnd"></div></div>
+</div>
+<div class="grid">
+ <label>Sản phẩm<select id="lsel"></select></label>
+ <label>Mã khác (theo Binance, ví dụ ADAUSDT)<span class="ins"><input id="lcus" placeholder="Nhập mã" autocapitalize="characters" autocomplete="off"><button id="lgo">Mở</button></span></label>
+</div>
+<div class="tfs" id="ltf"></div>
+<canvas id="lc"></canvas>
+<div class="row"><button class="s" id="lzi">＋ Phóng to</button><button class="s" id="lzo">－ Thu nhỏ</button><button class="s" id="lnow">⏭ Về hiện tại</button></div>
+<p class="cap" style="margin-top:8px">Kéo ngang để xem nến cũ · chạm vào nến để xem giá mở/cao/thấp/đóng · chạm lại để ẩn.</p>
+<div class="err" id="lerr"></div>
+</section>
+<section class="card">
+<h2>Quy đổi và dùng cho Lab</h2>
+<label>Tỷ giá quy đổi: 1 USDT = ? VND (để 0 thì không hiện giá VND)<input id="lrate" type="number" step="any" min="0" value="0"></label>
+<div class="row"><button id="luse">Đưa các nến đang xem vào Lab mô phỏng</button></div>
+<p class="cap" style="margin-top:10px">Nguồn giá: dữ liệu thị trường công khai của Binance, chỉ đọc giá, không giao dịch. Giá có thể khác sàn Việt Nam; giá VND chỉ là quy đổi theo tỷ giá bạn nhập. Bản lưu trong claude.ai không lấy được giá trực tuyến, hãy mở bản trên GitHub Pages.</p>
+</section>
+</div>
+
+<div id="tabGop" hidden>
+<p class="sub">Dành cho sàn gộp mọi lần mua thành một vị thế. App giữ sổ lệnh ảo theo phương pháp và báo bạn cần mua hay bán bao nhiêu.</p>
+
+<section class="card">
+<h2>1. Sổ giao dịch</h2>
+<label>Sổ đang dùng<select id="g_bk"></select></label>
+<div class="st" id="g_bkInfo">Chưa có sổ nào. Bấm “+ Sổ mới” để bắt đầu.</div>
+<div class="row"><button id="g_newB">+ Sổ mới</button><button class="s" id="g_bkupB">Sao lưu / Nhập</button><button class="x" id="g_delB">Xóa sổ này</button></div>
+<div id="g_bkup" hidden>
+<p class="cap">Sao chép toàn bộ chữ trong ô dưới và cất ở nơi an toàn. Muốn khôi phục thì dán vào rồi bấm “Nhập”. Sổ cùng mã sẽ được thay bằng bản nhập.</p>
+<textarea id="g_bkTxt"></textarea>
+<div class="row"><button class="s" id="g_expB">Hiện bản sao lưu</button><button class="s" id="g_impB">Nhập từ ô trên</button></div>
+</div>
+<div class="err" id="g_err0"></div>
+</section>
+
+<section class="card" id="g_newC" hidden>
+<h2>Tạo sổ mới</h2>
+<label>Phương pháp<select id="g_nm"></select></label>
+<div class="mcard" id="g_minfo"></div>
+<div class="grid" style="margin-top:10px">
+<label>Tên sổ<input id="g_nName" placeholder="Ví dụ: VNM · PP1"></label>
+<label>Sản phẩm<input id="g_nProd" placeholder="Mã hoặc tên sản phẩm"></label>
+<label>Giá khởi tạo (mắc 0)<input id="g_nA" type="number" step="any" inputmode="decimal"></label>
+</div>
+<div class="grid" id="g_nParams" style="margin-top:10px"></div>
+<div class="grid" style="margin-top:10px">
+<label>Bước khối lượng của sàn (lô tối thiểu)<input id="g_nLot" type="number" step="any" value="1" inputmode="decimal"></label>
+<label>Số phiên chờ hàng về (0 = về ngay)<input id="g_nTn" type="number" step="1" value="0" inputmode="numeric"></label>
+<label>Ngày bắt đầu<input id="g_nD" type="date"></label>
+</div>
+<p class="cap">Bước khối lượng: chứng khoán Việt Nam thường là 100, crypto có thể là 0,0001. Lệnh gợi ý được làm tròn theo bước này. Số phiên chờ hàng về: ví dụ 2 cho T+2.</p>
+<div class="row"><button id="g_mkB">Tạo sổ</button><button class="s" id="g_cnB">Hủy</button></div>
+<div class="err" id="g_err1"></div>
+</section>
+
+<div id="g_work" hidden>
+<section class="card">
+<h2>2. Việc cần làm</h2>
+<div class="grid"><label>Giá hiện tại trên sàn<input id="g_px" type="number" step="any" inputmode="decimal"></label></div>
+<div class="row"><button id="g_calcB">Tính lệnh</button><button class="u" id="g_upB">▲ Lên mắc kế</button><button class="d" id="g_dnB">▼ Xuống mắc kế</button></div>
+<div id="g_todo"></div>
+<div class="err" id="g_err2"></div>
+</section>
+
+<section class="card">
+<h2>3. Lệnh nên đặt sẵn</h2>
+<p class="cap">Giả sử giá đi thẳng tới từng mắc và mọi lệnh trước đó đã khớp. Bạn có thể đặt sẵn lệnh giới hạn ở mắc gần nhất phía trên và phía dưới.</p>
+<div id="g_lad" style="border:1px solid var(--bd);border-radius:8px"></div>
+</section>
+
+<section class="card">
+<h2>4. Đối chiếu sổ ảo và sàn</h2>
+<div class="m" id="g_mt"></div>
+<div class="row"><label style="flex:1 1 180px">Số lượng sàn đang hiển thị<input id="g_exQ" type="number" step="any" inputmode="decimal"></label><button class="s" id="g_chkB">Kiểm tra</button></div>
+<div class="st" id="g_chk" hidden></div>
+</section>
+
+<section class="card">
+<h2>5. Sổ lệnh ảo</h2>
+<p class="cap">Các lệnh phương pháp đang giữ. Lãi/lỗ tạm tính theo giá gần nhất và giá mắc lưới.</p>
+<div class="sc" id="g_lots"></div>
+</section>
+
+<section class="card">
+<h2>6. Lịch sử</h2>
+<div class="row" style="margin-top:0;margin-bottom:8px"><button class="s" id="g_undoB">↶ Hoàn tác thao tác cuối</button><button class="s" id="g_csvB">Xuất CSV</button></div>
+<textarea id="g_csv" readonly hidden style="margin-bottom:8px"></textarea>
+<div class="sc" id="g_hist" style="max-height:360px;overflow-y:auto"></div>
+</section>
+</div>
+
+<section class="card">
+<h2 id="g_notesT">Giả định</h2>
+<ul id="g_notes"></ul>
+</section>
+</div>
+
+<div id="tabLab">
+<section class="card">
+<h2>1. Dữ liệu giá</h2>
+<label>Dãy giá tự nhập, hoặc dữ liệu từ bên thứ 3 (CSV)<textarea id="csv" placeholder="Dãy giá: 100, 100.5, 101.2, 100.8 ...&#10;hoặc CSV: time,open,high,low,close"></textarea></label>
+<div class="grid" style="margin-top:10px">
+<label>Hoặc tải file CSV / TXT<input id="file" type="file" accept=".csv,.txt"></label>
+<label>Giá khởi tạo (chế độ bấm tay)<input id="p0" type="number" step="any" placeholder="Bỏ trống = giá đầu của dữ liệu"></label>
+</div>
+<p class="cap" style="margin-top:8px">Dãy giá: các số cách nhau bằng dấu phẩy, khoảng trắng hoặc xuống dòng. CSV nhận diện cột theo tên open, high, low, close; không có tiêu đề thì 5 cột = thời gian,O,H,L,C, 4 cột = O,H,L,C, 1–2 cột = giá đóng cửa. Có thể lấy nến thật từ tab “Giá trực tuyến”.</p>
+</section>
+
+<section class="card">
+<h2>2. Phương pháp và thông số</h2>
+<label>Phương pháp<select id="method"></select></label><div class="mcard" id="minfo" style="margin:10px 0;cursor:default"></div>
+<div class="grid" id="params" style="margin-top:10px"></div>
+</section>
+
+<section class="card">
+<h2>3. Điều khiển</h2>
+<label>Chế độ<select id="mode"><option value="auto">Tự động: chạy theo dữ liệu giá</option><option value="man">Bấm tay: lên/xuống từng mắc lưới</option></select></label>
+<div class="row"><button id="reset">Đặt lại với thông số này</button></div>
+<div class="row" id="ctA"><button id="play" class="u">▶ Chạy tự động</button><button id="pause" class="s">⏸ Dừng</button><button id="nxt" class="s">⏭ Tiến 1 nến</button>
+<label style="flex:1 1 130px">Tốc độ<select id="spd"><option value="700">Chậm</option><option value="250" selected>Vừa</option><option value="40">Nhanh</option></select></label></div>
+<div class="row" id="ctM" hidden><button id="up" class="u">▲ Lên 1 mắc lưới</button><button id="dn" class="d">▼ Xuống 1 mắc lưới</button></div>
+<div class="row"><button id="undo" class="s">↶ Hoàn tác</button><button id="save" class="s">Lưu để so sánh</button></div>
+<div class="err" id="err"></div>
+<div class="st" id="stat">Nhập dữ liệu và thông số, rồi bấm “Đặt lại với thông số này” để bắt đầu.</div>
+</section>
+
+<section class="card" id="res" hidden>
+<h2>4. Kết quả</h2>
+<p class="cap">Thang giá: các mắc lưới quanh giá hiện tại (viền đỏ liền: lô mua thêm đang giữ · viền đỏ đứt: mắc sẽ mua khi giá chạm tới · viền xanh: mắc sẽ bán khi giá chạm tới · nền xanh lá: mức giá khởi tạo)</p>
+<div id="lad" style="margin-bottom:12px"></div>
+<div class="m" id="metrics"></div>
+<p class="cap" style="margin-top:12px">Giá và các mắc lưới (chấm đỏ: mua, chấm xanh: bán hoặc cắt lệnh)</p>
+<canvas id="c1"></canvas>
+<p class="cap" style="margin-top:12px">Tổng tài sản (xanh dương) và lợi nhuận đã chốt (xanh lá)</p>
+<canvas id="c2"></canvas>
+<p class="cap" style="margin-top:12px">Lệnh đang mở (Constant Value Grid: lô mua thêm đang giữ)</p>
+<div class="sc" id="open"></div>
+<p class="cap" style="margin-top:12px">Nhật ký giao dịch (mới nhất ở trên, hiện 200 dòng gần nhất; bản CSV có đủ, sao chép rồi dán vào Excel)</p>
+<div class="row" style="margin-top:0;margin-bottom:8px"><button class="s" id="logx">Hiện nhật ký dạng CSV để sao chép</button></div>
+<textarea id="logcsv" readonly hidden style="margin-bottom:8px"></textarea>
+<div class="sc" id="log" style="max-height:320px;overflow-y:auto"></div>
+<div id="tchWrap" hidden><p class="cap" style="margin-top:12px">Số lần giá chạm mỗi mắc lưới (Lên: giá đi lên tới mắc · Xuống: giá đi xuống tới mắc · không tính lần bắt đầu tại giá khởi tạo)</p><p class="st" id="tchSum"></p><div class="sc" id="tch"></div></div>
+</section>
+
+<section class="card">
+<h2>5. So sánh các kịch bản</h2>
+<div class="sc"><table id="cmp"><thead><tr><th>Kịch bản</th><th>Đã chốt</th><th>Thả nổi</th><th>Tổng</th><th>Tổng % vốn</th><th>Lãi / vốn chiếm dụng tối đa</th><th>Sụt giảm tối đa</th><th>Lệnh/lô mở tối đa</th><th>Vốn chiếm dụng tối đa</th><th>Số lần cắt/bán</th></tr></thead><tbody></tbody></table></div>
+<p class="cap" id="cmpEmpty">Chưa có kịch bản nào. Chạy rồi nhấn “Lưu để so sánh”.</p>
+<p class="cap">“Tổng % vốn” = tổng lãi/lỗ chia vốn. Constant Value Grid lấy theo nguồn vốn; PP1: Only buy grid chỉ có khi nhập “Vốn tham chiếu”, nếu không sẽ hiện “–”.</p>
+<p class="cap">“Lãi / vốn chiếm dụng tối đa” = tổng lãi/lỗ chia vốn chiếm dụng tối đa, dùng để so các phương pháp với nhau. Dòng “Chỉ giữ sản phẩm” là % thay đổi giá từ đầu đến cuối, sụt giảm tính theo % giá. Danh sách được lưu trên máy này.</p>
+<div class="row"><button class="s" id="clr">Xóa danh sách</button></div>
+</section>
+
+<section class="card">
+<h2 id="notesT">Giả định của phương pháp đang chọn</h2>
+<ul id="notes"></ul>
+</section>
+</div>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=(v,d=2)=>isFinite(v)?Number(v).toLocaleString('vi-VN',{maximumFractionDigits:d}):'–';
+const cls=v=>v>0?'pos':v<0?'neg':'';
+let bars=[],S=null,acts=[],di=0,timer=null,saved=[],dataLabel='',curM='';const PM={};
+try{const v=JSON.parse(localStorage.getItem('tl_saved')||'[]');if(Array.isArray(v))saved=v}catch(e){}
+
+function parseData(txt){
+ const lines=txt.trim().split(/\r?\n/).filter(l=>l.trim());
+ if(!/[a-z]/i.test(txt)&&(lines.length==1||lines.every(l=>l.trim().split(/[,;\t ]+/).filter(Boolean).length==1))){
+  const v=txt.split(/[\s,;]+/).map(parseFloat).filter(x=>x>0);
+  if(v.length<2)throw Error('Cần ít nhất 2 giá hợp lệ (lớn hơn 0).');
+  return v.map((c,i)=>({t:i+1,o:c,h:c,l:c,c}))}
+ const rows=lines.map(l=>l.split(/[,;\t]/).map(s=>s.trim()));
+ let head=null;if(rows[0].some(x=>/[a-z]/i.test(x)))head=rows.shift().map(s=>s.toLowerCase());
+ const ix=k=>head?head.findIndex(h=>h.startsWith(k)):-1,io=ix('op'),ih=ix('hi'),il=ix('lo'),ic=ix('cl'),f=parseFloat,out=[];
+ for(const r of rows){let o,h,l,c,n=r.length;
+  if(head&&ic>=0){c=f(r[ic]);o=io>=0?f(r[io]):c;h=ih>=0?f(r[ih]):Math.max(o,c);l=il>=0?f(r[il]):Math.min(o,c)}
+  else if(n>=5){o=f(r[1]);h=f(r[2]);l=f(r[3]);c=f(r[4])}
+  else if(n==4){o=f(r[0]);h=f(r[1]);l=f(r[2]);c=f(r[3])}
+  else{c=f(r[n-1]);o=h=l=c}
+  if([o,h,l,c].some(x=>!(x>0)))continue;
+  out.push({t:out.length+1,o,h,l,c})}
+ if(out.length<2)throw Error('Không đọc được dữ liệu giá hợp lệ.');
+ return out}
+
+const LG=(s,o)=>(s.log||(s.log=[])).push(o);
+/* ===== Phương pháp: thêm phương pháp mới vào METHODS (make trả về bộ mô phỏng có feed(giá)) ===== */
+function makeBuyGrid(p,a,rb){
+ const st=p.mode=='pct'?a*p.step/100:p.step,eps=1e-9;
+ if(!(st>0))throw Error('Khoảng cách lưới phải lớn hơn 0.');
+ if(!(p.qty>0))throw Error('Số lượng mỗi lệnh phải lớn hơn 0.');
+ const s={a,st,p,x:a,open:new Map(),pr:[],eq:[],rl:[],ev:[],real:0,cyc:0,peak:0,dd:0,maxOpen:0,maxNot:0,not:0,worst:0,fl:0};
+ const upd=x=>{let fl=0;for(const P of s.open.values())fl+=(x-P.e)*p.qty;s.fl=fl;const e=s.real+fl;
+  s.peak=Math.max(s.peak,e);s.dd=Math.max(s.dd,s.peak-e);s.worst=Math.min(s.worst,fl);s.maxOpen=Math.max(s.maxOpen,s.open.size);s.maxNot=Math.max(s.maxNot,s.not);return e};
+ const step=(k,i,d)=>{const pv=a+k*st;
+  if(!(rb&&d<0)&&!s.open.has(k)&&!(p.max>0&&s.open.size>=p.max)){s.open.set(k,{e:pv});s.not+=pv*p.qty;s.ev.push({i,x:pv,o:1});LG(s,{i,t:'Mua',x:pv,q:p.qty,n:'mắc '+k})}
+  for(;;){const ks=[...s.open.keys()].sort((u,v)=>u-v);if(ks.length<2)break;
+   const kt=ks[ks.length-1],lt=pv-s.open.get(kt).e;if(!(lt<-eps))break;
+   let sum=lt,ch=[];
+   for(let j=0;j<ks.length-1;j++){const pr=pv-s.open.get(ks[j]).e;if(!(pr>eps))break;sum+=pr;ch.push(ks[j]);if(sum>eps)break}
+   if(!(sum>eps))break;
+   ch.push(kt);LG(s,{i,t:'Cắt',x:pv,q:ch.length*p.qty,pl:sum*p.qty,n:'lệnh vào ở '+ch.map(q=>fmt(s.open.get(q).e,5)).join(', ')});ch.forEach(q=>{s.not-=s.open.get(q).e*p.qty;s.open.delete(q)});
+   s.real+=sum*p.qty;s.cyc++;s.ev.push({i,x:pv,o:0})}
+  upd(pv)};
+ s.feed=x=>{const i=s.pr.length;
+  if(i){const p0=s.x,ks=[];
+   if(x>p0+eps*st){for(let k=Math.floor((p0-a)/st+eps)+1,h=Math.floor((x-a)/st+eps);k<=h;k++)ks.push(k)}
+   else if(x<p0-eps*st){for(let k=Math.ceil((p0-a)/st-eps)-1,l=Math.ceil((x-a)/st-eps);k>=l;k--)ks.push(k)}
+   if(ks.length>5000)throw Error('Quá nhiều mức lưới (>5000). Hãy tăng khoảng cách lưới.');
+   for(const k of ks)step(k,i,x>p0?1:-1)}
+  const e=upd(x);s.x=x;s.pr.push(x);s.eq.push(e);s.rl.push(s.real)};
+ s.feed(a);return s}
+function makeInfinity(p,a){
+ const st=p.mode=='pct'?a*p.step/100:p.step,eps=1e-9;
+ if(!(st>0))throw Error('Khoảng cách lưới phải lớn hơn 0.');
+ if(!(p.capital>0)||!(p.split>0)||p.split>100)throw Error('Nguồn vốn phải lớn hơn 0 và tỷ lệ sản phẩm trong khoảng 0–100%.');
+ const V=p.capital*p.split/100,pp={...p,cap:p.capital,qty:1};
+ const s={a,st,p:pp,x:a,V,open:new Map(),sold:new Set(),pr:[],eq:[],rl:[],ev:[],real:0,cyc:0,peak:0,dd:0,maxOpen:0,maxNot:0,worst:0,fl:0,cash:p.capital-V,qty:V/a};
+ const px=k=>a+k*st,lay=k=>V*(1/px(k)-1/px(k+1));
+ s.extra=()=>{let ex=0;for(const L of s.open.values())ex+=L.q;return[['Số lượng ban đầu (mua ở giá khởi tạo)',fmt(V/a),''],['Số lượng đang giữ',fmt(s.qty),''],['· Phần ban đầu còn giữ',fmt(s.qty-ex),''],['· Phần mua thêm đang giữ',fmt(ex),''],['Tiền mặt',fmt(s.cash),''],['Giá trị sản phẩm',fmt(s.qty*s.x),''],['Tổng nguồn vốn',fmt(s.cash+s.qty*s.x),'']]};
+ const upd=x=>{const net=s.cash+s.qty*x-p.capital;s.fl=net-s.real;s.peak=Math.max(s.peak,net);s.dd=Math.max(s.dd,s.peak-net);s.worst=Math.min(s.worst,s.fl);s.maxOpen=Math.max(s.maxOpen,s.open.size);s.maxNot=Math.max(s.maxNot,p.capital-s.cash);return net};
+ const down=(k,i)=>{if(s.open.has(k)||(k>=0&&!s.sold.has(k)))return;
+  const x=px(k);let q=lay(k);const c=s.cash/x;if(q>c)q=c;if(!(q>1e-12))return;
+  s.cash-=q*x;s.qty+=q;s.open.set(k,{e:x,q});s.ev.push({i,x,o:1});LG(s,{i,t:'Mua',x,q,n:'lô mắc '+k})};
+ const up=(j,i)=>{const k=j-1,x=px(j),L=s.open.get(k);let q,e;
+  if(L){q=L.q;e=L.e;s.open.delete(k)}
+  else if(k>=0&&!s.sold.has(k)){q=Math.min(lay(k),s.qty);e=a;s.sold.add(k)}
+  else return;
+  s.cash+=q*x;s.qty-=q;s.real+=q*(x-e);s.cyc++;s.ev.push({i,x,o:0});LG(s,{i,t:'Bán',x,q,pl:q*(x-e),n:'lô mắc '+k+(L?'':' (lô ban đầu)')})};
+ s.feed=x=>{const i=s.pr.length;
+  if(i){const p0=s.x;
+   if(Math.abs(x-p0)/st>5000)throw Error('Quá nhiều mức lưới (>5000). Hãy tăng khoảng cách lưới.');
+   if(x>p0+eps*st){const h=Math.floor((x-a)/st+eps);for(let j=Math.floor((p0-a)/st+eps)+1;j<=h;j++){up(j,i);upd(px(j))}}
+   else if(x<p0-eps*st){const l=Math.ceil((x-a)/st-eps);for(let k=Math.ceil((p0-a)/st-eps)-1;k>=l;k--){down(k,i);upd(px(k))}}}
+  const e=upd(x);s.x=x;s.pr.push(x);s.eq.push(e);s.rl.push(s.real)};
+ s.feed(a);return s}
+function makeMomentum(p,a){
+ const st=p.mode=='pct'?a*p.step/100:p.step,eps=1e-9,q=p.qty;
+ if(!(st>0))throw Error('Khoảng cách lưới phải lớn hơn 0.');
+ if(!(q>0))throw Error('Số lượng mỗi lệnh phải lớn hơn 0.');
+ const tol=eps*st*q;
+ const s={a,st,p,x:a,open:new Map(),pr:[],eq:[],rl:[],ev:[],real:0,cyc:0,peak:0,dd:0,maxOpen:0,maxNot:0,not:0,worst:0,fl:0};
+ let id=0,nb=0,ns=0,sde=0;const lv=new Map();
+ const net=x=>q*((nb-ns)*x-sde);
+ s.lvKeys=()=>[...lv.keys()];
+ s.lvT=k=>{const L=lv.get(k);if(!L)return{on:false,t:'chưa có lệnh'};const f=q*(L.b-L.s)*(s.x-(a+k*st));return{on:true,t:`BUY ${L.b} · SELL ${L.s} · <i class="${cls(f)}" style="font-style:normal">${fmt(f)}</i>`}};
+ s.extra=()=>[['Lệnh BUY đang mở',fmt(nb,0),''],['Lệnh SELL đang mở',fmt(ns,0),''],['Vị thế ròng (số lượng)',fmt((nb-ns)*q),'']];
+ const upd=x=>{const fl=net(x);s.fl=fl;const e=s.real+fl;s.peak=Math.max(s.peak,e);s.dd=Math.max(s.dd,s.peak-e);s.worst=Math.min(s.worst,fl);s.maxOpen=Math.max(s.maxOpen,s.open.size);s.maxNot=Math.max(s.maxNot,s.not);return e};
+ const step=(k,d,i)=>{const pv=a+k*st;
+  if(s.open.size){const t=net(pv);if(t>tol){LG(s,{i,t:'Cắt toàn bộ',x:pv,q:(nb+ns)*q,pl:t,n:nb+' BUY · '+ns+' SELL'});s.real+=t;s.cyc++;s.open.clear();lv.clear();nb=ns=sde=0;s.not=0;s.ev.push({i,x:pv,o:0})}}
+  const L=lv.get(k)||{b:0,s:0},mine=d>0?L.b:L.s,opp=d>0?L.s:L.b,n=mine>opp?0:opp-mine+1;for(let j=0;j<n;j++){id++;s.open.set(id,{e:pv,k,d});if(d>0){L.b++;nb++}else{L.s++;ns++}sde+=d*pv;s.not+=pv*q}if(n){lv.set(k,L);s.ev.push({i,x:pv,o:d>0?1:0});LG(s,{i,t:d>0?'BUY':'SELL',x:pv,q:n*q,n:n+' lệnh · mắc '+k})}
+  upd(pv)};
+ s.feed=x=>{const i=s.pr.length;
+  if(i){const p0=s.x;
+   if(Math.abs(x-p0)/st>5000)throw Error('Quá nhiều mức lưới (>5000). Hãy tăng khoảng cách lưới.');
+   if(x>p0+eps*st){const h=Math.floor((x-a)/st+eps);for(let k=Math.floor((p0-a)/st+eps)+1;k<=h;k++)step(k,1,i)}
+   else if(x<p0-eps*st){const l=Math.ceil((x-a)/st-eps);for(let k=Math.ceil((p0-a)/st-eps)-1;k>=l;k--)step(k,-1,i)}}
+  const e=upd(x);s.x=x;s.pr.push(x);s.eq.push(e);s.rl.push(s.real)};
+ s.feed(a);return s}
+const METHODS={buygrid:{name:'Only buy grid',tag:'Lưới · chỉ BUY · spot',desc:'Mỗi mắc lưới mà giá chạm tới (lên hay xuống) mua 1 lệnh, tối đa 1 lệnh mỗi mắc. Khi lệnh ở mắc cao nhất đang lỗ, cắt nó cùng các lệnh thấp nhất đang lãi sao cho tổng dương. Không chốt lời riêng từng lệnh.',make:makeBuyGrid,params:[
+ {k:'mode',l:'Kiểu khoảng cách lưới',t:'sel',o:[['pct','% của giá khởi tạo'],['abs','Số cố định (đơn vị giá)']],v:'pct'},
+ {k:'step',l:'Khoảng cách lưới',v:1},
+ {k:'qty',l:'Số lượng mỗi lệnh',v:1},
+ {k:'max',l:'Tối đa lệnh mở (0 = không giới hạn)',v:0},
+ {k:'cap',l:'Vốn tham chiếu để tính % sụt giảm (0 = bỏ qua)',v:0}]},infinity:{name:'Constant Value Grid',tag:'Cân bằng giá trị · spot',desc:'Giữ giá trị sản phẩm cố định. Giá tăng một mắc thì bán ngay phần dư, giá giảm một mắc thì mua một lệnh. Lệnh mua khi giá giảm chỉ bán khi giá hồi lên một mắc.',make:makeInfinity,params:[
+ {k:'mode',l:'Kiểu khoảng cách lưới',t:'sel',o:[['pct','% của giá khởi tạo'],['abs','Số cố định (đơn vị giá)']],v:'pct'},
+ {k:'step',l:'Khoảng cách lưới',v:1},
+ {k:'capital',l:'Nguồn vốn',v:100000000},
+ {k:'split',l:'Tỷ lệ chia cho sản phẩm (%)',v:70}]},momentum:{name:'Direction Grid (BUY lên · SELL xuống)',tag:'Lưới · BUY + SELL · CFD',spot:false,desc:'Giá lên một mắc: nếu số BUY ở đó chưa hơn số SELL thì mua cho BUY hơn SELL một lệnh; giá xuống thì ngược lại với SELL. Tại mỗi mắc, nếu tổng lãi/lỗ ròng của mọi lệnh đang mở lớn hơn 0 thì cắt toàn bộ, rồi mở lệnh mới tại mắc đó.',make:makeMomentum,params:[
+ {k:'mode',l:'Kiểu khoảng cách lưới',t:'sel',o:[['pct','% của giá khởi tạo'],['abs','Số cố định (đơn vị giá)']],v:'pct'},
+ {k:'step',l:'Khoảng cách lưới',v:1},
+ {k:'qty',l:'Số lượng mỗi lệnh',v:1},
+ {k:'cap',l:'Vốn tham chiếu để tính % sụt giảm (0 = bỏ qua)',v:0}]}};
+METHODS.buyrb={name:'Only buy grid · Mua khi hồi',tag:'Lưới · chỉ BUY · spot · mua khi giá tăng',desc:'Giống PP1: Only buy grid nhưng khi giá giảm xuống một mắc thì không mua. Chỉ mua khi giá đi lên chạm mắc chưa có lệnh. Cách cắt lệnh giữ nguyên.',make:(p,a)=>makeBuyGrid(p,a,true),params:METHODS.buygrid.params};
+METHODS.buyrb.notes=['Lệnh mua và lệnh cắt đều khớp đúng tại giá mắc lưới. Mỗi mắc tối đa 1 lệnh.','Giá đi xuống chạm một mắc: không mua, cứ để giá giảm. Giá đi lên chạm một mắc chưa có lệnh: mua 1 lệnh tại mắc đó. Mắc đã có lệnh thì không mua thêm. Lúc bắt đầu tại giá khởi tạo chưa mua.','Quy tắc cắt giống PP1: Only buy grid và vẫn được xét tại mọi mắc (kể cả khi giá đi xuống): lệnh cao nhất đang lỗ thì cắt cùng số lệnh thấp nhất đang lãi ít nhất sao cho tổng dương, lặp lại đến khi không cắt được.','Không chốt lời riêng từng lệnh và không cắt lỗ theo giá.','Mục đích: vốn chiếm dụng thấp hơn khi giá giảm, để dành vốn cho sản phẩm khác (ví dụ sản phẩm tương quan nghịch). Đổi lại bỏ lỡ các mắc đáy đã đi qua.','Chưa xác nhận: giới hạn số lệnh hoặc vốn; việc cắt khi giá đang giảm; tên phương pháp là tên tạm.'];
+const NO=k=>Object.keys(METHODS).indexOf(k)+1;
+const COMMON=['Giao dịch spot: không đòn bẩy, không bán khống. Không tính phí, spread, trượt giá.','Chế độ tự động: mỗi nến đi theo đường O→L→H→C (nến tăng) hoặc O→H→L→C (nến giảm). Dãy giá thì mỗi số là một điểm giá.','Chế độ bấm tay: mỗi lần bấm giá di chuyển đúng một khoảng lưới từ vị trí hiện tại. Hoàn tác lùi lại một thao tác.','Giá nhảy qua nhiều mắc trong một lần: xử lý lần lượt từng mắc theo hướng giá đi. Giá nằm giữa hai mắc: không có hành động, chỉ cập nhật lãi/lỗ thả nổi.','Dữ liệu cho Lab: dán, nạp file, hoặc lấy nến thật từ tab “Giá trực tuyến” (chỉ chạy ở bản trên GitHub Pages).'];
+METHODS.buygrid.notes=['Lệnh mua và lệnh cắt đều khớp đúng tại giá mắc lưới.','Mỗi mắc tối đa 1 lệnh. Giá chạm một mắc chưa có lệnh (đi lên hay đi xuống) thì mua 1 lệnh tại mắc đó; tại giá khởi tạo lúc bắt đầu chưa mua.','Quy tắc cắt: khi lệnh ở mắc cao nhất đang lỗ, cắt nó cùng số lệnh thấp nhất (lãi nhiều nhất) ít nhất sao cho tổng lãi/lỗ của nhóm cắt dương, lặp lại đến khi không cắt được nữa.','Không chốt lời riêng từng lệnh và không cắt lỗ theo giá.','Vốn chiếm dụng = tổng giá trị (giá vào × số lượng) các lệnh đang mở. “Vốn tham chiếu” chỉ dùng để tính % sụt giảm.','Chưa xác minh: giới hạn số lệnh hoặc vốn. Thông số “Tối đa lệnh mở” hiện chỉ dừng mua khi đạt giới hạn.'];
+METHODS.infinity.notes=['Số lượng sản phẩm ban đầu = vốn × tỷ lệ ÷ giá khởi tạo, mua tại giá khởi tạo.','Giá giảm một mắc: mua một lô. Giá hồi lên một mắc: bán lô ở mắc ngay phía dưới. Giá tăng trên giá khởi tạo: bán dần phần sản phẩm ban đầu.','Hết tiền mặt: chỉ mua phần còn đủ và dừng mua cho đến khi bán được.','Không có giá trần (giả định, chưa xác nhận).','Vốn chiếm dụng tối đa = phần vốn đã chuyển thành sản phẩm cao nhất (nguồn vốn trừ tiền mặt thấp nhất). “Lãi đã chốt” là lãi của các lô đã bán, phần còn lại là thả nổi.'];
+METHODS.momentum.notes=['Giao dịch CFD: cho phép bán khống (SELL). Chưa tính ký quỹ, đòn bẩy, phí, spread và phí qua đêm. Giả định vốn vô hạn, không giới hạn số lệnh mở.','Lệnh mở và cắt đều khớp đúng tại giá mắc lưới. Giá đi lên tới một mắc: nếu số BUY ở đó đã lớn hơn số SELL thì không mua; nếu chưa thì mua thêm cho số BUY hơn số SELL đúng một lệnh (chưa có gì thì mua 1). Giá đi xuống thì ngược lại với SELL. Mỗi lần giá chạm lại từ hướng ngược, mắc thêm lệnh nên số lệnh mỗi mắc tăng dần cho đến khi cắt toàn bộ.','Thứ tự tại mỗi mắc: xét cắt trước (tổng lãi/lỗ ròng của mọi lệnh đang mở lớn hơn 0 thì cắt toàn bộ), rồi mới áp quy tắc mở lệnh ở trên (sau khi cắt, mắc đó trống nên mở 1 lệnh).','Lúc bắt đầu tại giá khởi tạo chưa mở lệnh. Không chốt lời riêng từng lệnh, không cắt lỗ theo giá.','Vốn chiếm dụng = tổng (giá vào × số lượng) của mọi lệnh BUY và SELL đang mở (giá trị danh nghĩa, chưa bù trừ). “Tổng % vốn” chỉ có khi nhập vốn tham chiếu.','Chưa xác nhận: “tổng lớn hơn 0” hiện hiểu là lãi tối thiểu một khoảng lưới (vì mọi lệnh khớp đúng mắc). Quy tắc “hơn một lệnh” hiểu theo số lệnh. Số lệnh mỗi mắc tăng dần khi giá chạm lại nhiều lần. Tên phương pháp là tên tạm.'];
+function renderNotes(){const m=METHODS[$('method').value];$('notesT').textContent='Giả định · PP'+NO($('method').value)+': '+m.name;$('notes').innerHTML=(m.spot===false?COMMON.slice(1):COMMON).concat(m.notes||[]).map(t=>'<li>'+t+'</li>').join('')}
+
+
+/* ===== Điều khiển ===== */
+function renderParams(){const m=METHODS[$('method').value],V=PM[$('method').value]||{},val=q=>{const v=V[q.k];return v==null||Number.isNaN(v)?q.v:v};
+ $('params').innerHTML=m.params.map(q=>`<label>${q.l}${q.t=='sel'?`<select id="p_${q.k}">${q.o.map(o=>`<option value="${o[0]}"${o[0]==val(q)?' selected':''}>${o[1]}</option>`).join('')}</select>`:`<input id="p_${q.k}" type="number" step="any" value="${val(q)}">`}</label>`).join('')}
+function readP(mk){const p={};METHODS[mk||$('method').value].params.forEach(q=>{const v=$('p_'+q.k).value;p[q.k]=q.t=='sel'?v:parseFloat(v)});return p}
+const err=m=>{$('err').textContent=m||''};
+function stop(){clearInterval(timer);timer=null}
+function reset(){stop();err();
+ try{const p=readP(),raw=$('csv').value.trim(),man=$('mode').value=='man';bars=raw?parseData(raw):[];
+  let a;
+  if(man)a=parseFloat($('p0').value)||(bars[0]&&bars[0].o);
+  else{if(!bars.length)throw Error('Chế độ tự động cần dữ liệu giá. Hãy nhập dãy giá hoặc dán CSV.');a=bars[0].o}
+  if(!(a>0))throw Error('Hãy nhập giá khởi tạo hoặc dữ liệu giá.');
+  S=trackTouch(METHODS[$('method').value].make(p,a));acts=[];di=0;
+  dataLabel=man?'bấm tay':bars.length+' nến';view()}
+ catch(e){S=null;err(e.message)}}
+function need(){if(!S){err('Hãy bấm “Đặt lại với thông số này” trước.');return false}err();return true}
+function move(d){if(!need())return;
+ try{const k=Math.round((S.x-S.a)/S.st)+d;S.feed(S.a+k*S.st);acts.push({n:1,b:0});view()}catch(e){err(e.message)}}
+function bar(q){if(!need())return false;
+ if(di>=bars.length){stop();err('Đã hết dữ liệu giá.');return false}
+ try{const b=bars[di++],pts=b.c>=b.o?[b.o,b.l,b.h,b.c]:[b.o,b.h,b.l,b.c];let n=0;S.cb=di;
+  for(const x of pts)if(Math.abs(x-S.x)>1e-12){S.feed(x);n++}
+  acts.push({n,b:1});if(!q)view();return true}catch(e){stop();err(e.message);return false}}
+function play(){if(!need())return;stop();timer=setInterval(()=>{const b=Math.max(1,Math.ceil(bars.length/3000));let ok=true;for(let j=0;j<b;j++){ok=bar(true);if(!ok)break}if(S)view();if(!ok)stop()},+$('spd').value)}
+function undo(){if(!need())return;const A=acts.pop();if(!A){err('Không còn thao tác nào để hoàn tác.');return}
+ stop();const pts=S.pr.slice(1,S.pr.length-A.n),pcs=S.pc.slice(1),p=S.p,a=S.a;
+ S=trackTouch(METHODS[$('method').value].make(p,a));pts.forEach((x,j)=>{S.cb=pcs[j];S.feed(x)});if(A.b)di--;view()}
+
+function trackTouch(s){const T=new Map(),f=s.feed,eps=1e-9;s.tch=T;s.pc=[0];s.cb=0;
+ s.feed=x=>{const p0=s.x,a=s.a,st=s.st,nl=s.log?s.log.length:0,r=f(x),add=(k,u)=>{const c=T.get(k)||{u:0,d:0};if(u)c.u++;else c.d++;T.set(k,c)};
+  if(x>p0+eps*st){for(let k=Math.floor((p0-a)/st+eps)+1,h=Math.floor((x-a)/st+eps);k<=h;k++)add(k,1)}
+  else if(x<p0-eps*st){for(let k=Math.ceil((p0-a)/st-eps)-1,l=Math.ceil((x-a)/st-eps);k>=l;k--)add(k,0)}
+  if(s.log)for(let j=nl;j<s.log.length;j++)s.log[j].c=s.cb;s.pc.push(s.cb);
+  return r};return s}
+function touches(){const w=$('tchWrap'),T=S.tch;if(!T){w.hidden=true;return}
+ const ks=[...T.keys()].sort((u,v)=>v-u);let tot=0,mx=null;
+ for(const k of ks){const c=T.get(k),n=c.u+c.d;tot+=n;if(!mx||n>mx.n)mx={k,n}}
+ w.hidden=false;
+ $('tchSum').textContent=ks.length?ks.length+' mắc đã chạm · tổng '+fmt(tot,0)+' lần chạm · nhiều nhất: mắc '+mx.k+' (giá '+fmt(S.a+mx.k*S.st,5)+') '+fmt(mx.n,0)+' lần'+(ks.length>200?' · bảng chỉ hiện 200 mắc gần giá hiện tại':''):'Giá chưa chạm mắc lưới nào.';
+ const cur=Math.round((S.x-S.a)/S.st);let sh=ks;if(ks.length>200)sh=ks.slice().sort((u,v)=>Math.abs(u-cur)-Math.abs(v-cur)).slice(0,200).sort((u,v)=>v-u);
+ const lt=!!S.lvT&&!S.noLot;
+ $('tch').innerHTML=ks.length?'<table><tr><th>Mắc</th><th>Giá</th><th>Chạm</th><th>Lên</th><th>Xuống</th>'+(lt?'<th>Đang mở</th>':'')+'</tr>'+sh.map(k=>{const c=T.get(k),L=lt?S.lvT(k):null;return`<tr><td>${k}</td><td>${fmt(S.a+k*S.st,5)}</td><td><b>${fmt(c.u+c.d,0)}</b></td><td>${fmt(c.u,0)}</td><td>${fmt(c.d,0)}</td>${lt?'<td>'+(L.on?L.t:'–')+'</td>':''}</tr>`}).join('')+'</table>':''}
+function logView(){const L=S.log||[],au=$('mode').value=='auto';
+ $('log').innerHTML=L.length?'<table><tr><th>Bước</th>'+(au?'<th>Nến</th>':'')+'<th>Hành động</th><th>Giá</th><th>Số lượng</th><th>Lãi chốt</th><th style="text-align:left">Ghi chú</th></tr>'+L.slice(-200).reverse().map(e=>`<tr><td>${e.i}</td>${au?'<td>'+(e.c||'–')+'</td>':''}<td>${e.t}</td><td>${fmt(e.x,5)}</td><td>${fmt(e.q,4)}</td><td class="${cls(e.pl||0)}">${e.pl==null?'':fmt(e.pl)}</td><td style="text-align:left">${e.n||''}</td></tr>`).join('')+'</table>':'<p class="cap">Chưa có giao dịch nào.</p>'}
+const csvq=v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+const PTS=b=>b.c>=b.o?[b.o,b.l,b.h,b.c]:[b.o,b.h,b.l,b.c];
+function snap(s,l){return{l,real:s.real,fl:s.fl,dd:s.dd,maxOpen:s.maxOpen,maxNot:s.maxNot,cyc:s.cyc,pc:s.p.cap>0?(s.real+s.fl)/s.p.cap*100:null,rc:s.maxNot>0?(s.real+s.fl)/s.maxNot*100:null}}
+function addHold(B){const k='hold|'+B.length+'|'+B[0].o+'|'+B[B.length-1].c;if(saved.some(s=>s.k==k))return;
+ const a=B[0].o;let pk=a,dd=0;for(const b of B)for(const x of PTS(b)){if(x>pk)pk=x;dd=Math.max(dd,(pk-x)/pk*100)}const r=(B[B.length-1].c/a-1)*100;
+ saved.push({k,l:'Chỉ giữ sản phẩm (mua ở giá đầu, giữ đến cuối) · '+B.length+' nến',ddp:dd,pc:r,rc:r})}
+/* ===== Hiển thị ===== */
+function view(){
+ const iv=!!S.sold||!!S.noLot,net=S.real+S.fl,M=[['Lợi nhuận đã chốt',fmt(S.real),cls(S.real)],['Thả nổi hiện tại',fmt(S.fl),cls(S.fl)],['Tổng lãi/lỗ',fmt(net),cls(net)],
+ ['Sụt giảm tối đa',fmt(S.dd)+(S.p.cap>0?' ('+fmt(S.dd/S.p.cap*100,1)+'%)':''),''],['Lỗ thả nổi tệ nhất',fmt(S.worst),cls(S.worst)],[iv?'Lô mua thêm đang giữ tối đa':'Lệnh mở tối đa',fmt(S.maxOpen,0),''],
+ ['Vốn chiếm dụng tối đa',fmt(S.maxNot),''],[iv?'Số lần bán':'Số lần cắt lệnh',fmt(S.cyc,0),''],[iv?'Lãi TB mỗi lần bán':'Lãi TB mỗi lần cắt',fmt(S.cyc?S.real/S.cyc:0,3),''],[iv?'Lô mua thêm đang giữ':'Lệnh đang mở',fmt(S.open.size,0),'']].concat(S.extra?S.extra():[]);
+ $('metrics').innerHTML=M.filter(m=>!(S.noLot&&/^Lô mua thêm/.test(m[0]))).map(m=>`<div><span>${m[0]}</span><b class="${m[2]}">${m[1]}</b></div>`).join('');
+ $('stat').textContent='Giá hiện tại '+fmt(S.x,5)+' · mắc lưới '+fmt(Math.round((S.x-S.a)/S.st),0)+' so với giá khởi tạo '+fmt(S.a,5)+($('mode').value=='auto'?' · nến '+di+'/'+bars.length:'');
+ const rows=[...S.open].sort((a,b)=>b[0]-a[0]).slice(0,40);
+ $('open').innerHTML=S.noLot?'<p class="cap">Phương pháp này không tách từng lô. Xem số lượng đang giữ, giá vốn bình quân và tiền mặt ở phần số liệu phía trên.</p>':rows.length?'<table><tr><th>Mắc</th><th>Giá vào</th><th>Thả nổi</th></tr>'+rows.map(([k,P])=>{const f=(S.x-P.e)*(P.d||1)*(P.q||S.p.qty);return`<tr><td>${P.d?(P.d>0?'BUY':'SELL')+' · mắc '+P.k:k}</td><td>${fmt(P.e,5)}</td><td class="${cls(f)}">${fmt(f)}</td></tr>`}).join('')+'</table>':'<p class="cap">Chưa có lệnh nào đang mở.</p>';
+ touches();logView();$('res').hidden=false;ladder();charts()}
+function infRow(k,pv,P){const a=S.a,st=S.st,x=S.x,V=S.V,px=j=>a+j*st,fl=v=>`<i class="${cls(v)}" style="font-style:normal">${fmt(v)}</i>`;let p=[],ini=0;
+ if(k==0){p.push('mua '+fmt(V/a)+' SL ở giá này');ini=1}
+ if(P)p.push('đã mua ở đây · '+fmt(P.q)+' SL · lãi/lỗ '+fl((x-P.e)*P.q));
+ const Q=S.open.get(k-1),init=k-1>=0&&!S.sold.has(k-1);
+ if(pv>x+1e-9&&(Q||init)){const q=Q?Q.q:V*(1/px(k-1)-1/pv),e=Q?Q.e:a;p.push('chạm đây sẽ bán '+fmt(q)+' SL (lô mua ở '+fmt(e,5)+') · lãi +'+fl(q*(pv-e)));ini=1}
+ if(pv<x-1e-9&&!P&&(k<0||S.sold.has(k))){const full=V*(1/pv-1/(pv+st));let q=Math.min(full,S.cash/pv);if(q>1e-12){p.push('chạm đây sẽ mua '+fmt(q)+' SL · chi '+fmt(q*pv)+(q<full-1e-9?' (hết tiền mặt, chỉ mua phần còn đủ)':''));ini=2}}
+ if(!p.length)p.push(pv<x?(k<0?'hết tiền mặt · không mua được':S.sold.has(k)?'đã bán · hết tiền mặt để mua lại':'lô ban đầu đang giữ'):k>=0&&!S.sold.has(k)?'lô ban đầu đang giữ':'chưa có lệnh');
+ return{t:p.join('<br>'),ini}}
+function ladder(){const a=S.a,st=S.st,x=S.x,ck=Math.round((x-a)/st),ok=S.lvKeys?S.lvKeys():[...S.open.keys()],bot=Math.min(ck-3,ok.length?Math.min(...ok)-1:ck-3),top=Math.min(Math.max(ck+8,ok.length?Math.max(...ok)+1:ck+8),bot+80);let h='',pl=false;
+ const mk=()=>{pl=true;return`<div class="lr now" id="nowr"><span>▶ Giá hiện tại</span><b>${fmt(x,5)}</b></div>`};
+ for(let k=top;k>=bot;k--){const pv=a+k*st;const eq=!pl&&Math.abs(x-pv)<=1e-9*st;if(eq)pl=true;else if(!pl&&x>pv)h+=mk();const LV=S.lvT?S.lvT(k):null,P=LV?(LV.on?{}:null):S.open.get(k);let t='',ini=0;
+  if(S.sold){const r=infRow(k,pv,P);t=r.t;ini=r.ini}
+  else if(LV)t=LV.t;
+  else if(P){const f=(x-P.e)*(P.q||S.p.qty);t=`${P.q?'Mua thêm · '+fmt(P.q)+' đv':'BUY đang giữ'} · <i class="${cls(f)}" style="font-style:normal">${fmt(f)}</i>`}
+
+  else if(pv<x)t='chờ mua';
+  else t='chưa có lệnh';
+  h+=`<div class="lr${eq?' now':P?' op':ini==2?' pb':ini?' ini':''}${k==0?' p0':''}"${eq?' id="nowr"':''}><span>${eq?'▶ ':''}Mắc ${k}</span><b>${fmt(pv,5)}</b><em>${t}</em></div>`}
+ if(!pl)h+=mk();
+ const L=$('lad');L.innerHTML=h;const n=$('nowr');if(n)L.scrollTop=n.offsetTop-L.clientHeight/2+n.clientHeight/2}
+function draw(cv,Sr,Mk,lv){const W=cv.clientWidth,H=cv.clientHeight,d=devicePixelRatio||1;cv.width=W*d;cv.height=H*d;
+ const g=cv.getContext('2d');g.scale(d,d);const cs=getComputedStyle(document.documentElement),gv=k=>cs.getPropertyValue(k).trim();
+ let lo=Infinity,hi=-Infinity;Sr.forEach(s=>s.d.forEach(v=>{lo=Math.min(lo,v);hi=Math.max(hi,v)}));
+ if(hi==lo){hi+=1;lo-=1}
+ const n=Sr[0].d.length,L=56,T=8,B=6,x=i=>L+(W-L-6)*i/Math.max(1,n-1),y=v=>T+(H-T-B)*(1-(v-lo)/(hi-lo)),dc=hi-lo>=10?0:hi-lo>=1?2:5;
+ g.font='10px system-ui';g.fillStyle=gv('--mu');g.strokeStyle=gv('--bd');g.lineWidth=1;
+ if(lv&&lv.length<=60){g.setLineDash([2,3]);lv.forEach(q=>{const v=q.v;if(v<lo||v>hi)return;g.strokeStyle=q.o?gv('--dn'):gv('--bd');g.beginPath();g.moveTo(L,y(v));g.lineTo(W-6,y(v));g.stroke()});g.setLineDash([]);g.strokeStyle=gv('--bd')}
+ for(let j=0;j<=3;j++){const v=lo+(hi-lo)*j/3;g.fillText(fmt(v,dc),2,y(v)+3)}
+ const sp=Math.max(1,Math.floor(n/1500));Sr.forEach(s=>{g.strokeStyle=gv(s.c);g.lineWidth=1.5;g.beginPath();s.d.forEach((v,i)=>{if(i%sp&&i!=n-1)return;i?g.lineTo(x(i),y(v)):g.moveTo(x(i),y(v))});g.stroke()});
+ if(Mk){const k=Math.ceil(Mk.length/700);Mk.forEach((m,j)=>{if(j%k)return;g.fillStyle=gv(m.o?'--dn':'--up');g.fillRect(x(m.i)-2,y(m.x)-2,4,4)})}}
+function charts(){if(!S)return;
+ let lo=Infinity,hi=-Infinity;for(const v of S.pr){if(v<lo)lo=v;if(v>hi)hi=v}const k0=Math.floor((lo-S.a)/S.st),k1=Math.ceil((hi-S.a)/S.st),lv=[];
+ if(k1-k0<=60)for(let k=k0;k<=k1;k++)lv.push({v:S.a+k*S.st,o:S.lvT?S.lvT(k).on:S.open.has(k)});
+ draw($('c1'),[{d:S.pr,c:'--tx'}],S.ev,lv);draw($('c2'),[{d:S.eq,c:'--ac'},{d:S.rl,c:'--up'}])}
+function renderCmp(){const F=(v,d)=>v==null?'–':fmt(v,d),P=v=>v==null?'–':fmt(v,2)+'%';
+ $('cmp').querySelector('tbody').innerHTML=saved.map(s=>{const t=s.real==null?null:s.real+s.fl;return`<tr><td>${s.l}</td><td class="${cls(s.real)}">${F(s.real)}</td><td class="${cls(s.fl)}">${F(s.fl)}</td><td class="${cls(t)}">${F(t)}</td><td class="${cls(s.pc)}">${P(s.pc)}</td><td class="${cls(s.rc)}">${P(s.rc)}</td><td>${s.ddp!=null?fmt(s.ddp,1)+'% giá':F(s.dd)}</td><td>${F(s.maxOpen,0)}</td><td>${F(s.maxNot)}</td><td>${F(s.cyc,0)}</td></tr>`}).join('');
+ $('cmpEmpty').hidden=saved.length>0;try{localStorage.setItem('tl_saved',JSON.stringify(saved))}catch(e){}}
+
+$('method').innerHTML=Object.entries(METHODS).map(([k,v],i)=>`<option value="${k}">PP${i+1}: ${v.name}</option>`).join('');
+function renderM(){const m=METHODS[$('method').value];renderNotes();
+ $('minfo').innerHTML='<b>PP'+NO($('method').value)+': '+m.name+'</b><small>'+m.tag+'</small><p>'+m.desc+'</p>'}
+$('method').onchange=()=>{try{PM[curM]=readP(curM)}catch(e){}curM=$('method').value;stop();S=null;$('res').hidden=true;$('stat').textContent='Đã chọn phương pháp mới. Bấm “Đặt lại với thông số này” để bắt đầu.';renderParams();renderM()};
+curM=$('method').value;renderM();
+$('mode').onchange=()=>{stop();$('ctA').hidden=$('mode').value!='auto';$('ctM').hidden=$('mode').value!='man';S=null;$('res').hidden=true;$('stat').textContent='Bấm “Đặt lại với thông số này” để bắt đầu chế độ mới.'};
+$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('csv').value=r.result};r.readAsText(f)};
+$('reset').onclick=reset;$('play').onclick=play;$('pause').onclick=stop;$('nxt').onclick=()=>{stop();bar()};
+$('up').onclick=()=>move(1);$('dn').onclick=()=>move(-1);$('undo').onclick=undo;
+$('save').onclick=()=>{if(!need())return;const p=S.p,au=$('mode').value=='auto',lab=au?di+'/'+bars.length+' nến':'bấm tay';
+ saved.push(snap(S,'PP'+NO($('method').value)+': '+METHODS[$('method').value].name.split(' (')[0]+' · lưới '+p.step+(p.mode=='pct'?'%':'')+' · '+lab));
+ if(au&&di>0)addHold(bars.slice(0,di));renderCmp()};
+$('logx').onclick=()=>{if(!need())return;const L=S.log||[];if(!L.length){err('Chưa có giao dịch để xuất.');return}
+ const T=$('logcsv');T.hidden=false;T.value=['Bước,Nến,Hành động,Giá,Số lượng,Lãi chốt,Ghi chú'].concat(L.map(e=>[e.i,e.c||'',e.t,e.x,e.q,e.pl??'',e.n||''].map(csvq).join(','))).join('\n');T.focus();T.select()};
+$('clr').onclick=()=>{saved=[];renderCmp()};
+addEventListener('resize',charts);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',charts);
+renderParams();renderCmp();
+</script>
+
+<script>
+/* ===== Tab Trợ lý gộp lệnh (sổ lệnh ảo cho sàn gộp lệnh) ===== */
+(()=>{
+/* ===== Bộ máy sổ lệnh ảo: mỗi phương pháp có init(b) và level(b,s,k,d,acts) ===== */
+const EPS=1e-9;
+const ENG={
+ pp1:{grid:1},pp4:{grid:1,rb:1},pp2:{}
+};
+function stepOf(p,a){return p.mode=='pct'?a*p.step/100:p.step}
+function newState(m,p,a){const st=stepOf(p,a);
+ if(m=='pp2'){const V=p.capital*p.split/100;return{x:a,real:0,cuts:0,lots:[],sold:[],cash:p.capital-V,qty:V/a}}
+ return{x:a,real:0,cuts:0,lots:[]}}
+function ledgerQty(m,s){if(m=='pp2')return s.qty;let t=0;for(const l of s.lots)t+=l.q;return t}
+function gridLevel(b,s,k,d,acts){const p=b.p,a=b.a,st=b.st,pv=a+k*st,E=EPS*st,rb=ENG[b.m].rb;
+ if(!(rb&&d<0)&&!s.lots.some(l=>l.k==k)&&!(p.max>0&&s.lots.length>=p.max)){s.lots.push({k,e:pv,q:p.qty,nw:1});acts.push({t:'Mua',k,x:pv,q:p.qty,n:'mua lệnh mắc '+k})}
+ for(;;){const L=s.lots.slice().sort((u,v)=>u.k-v.k);if(L.length<2)break;
+  const top=L[L.length-1],lt=pv-top.e;if(!(lt<-E))break;
+  let sum=lt;const g=[];
+  for(let j=0;j<L.length-1;j++){const pr=pv-L[j].e;if(!(pr>E))break;sum+=pr;g.push(L[j]);if(sum>E)break}
+  if(!(sum>E))break;g.push(top);
+  let q=0,pl=0;for(const l of g){q+=l.q;pl+=l.q*(pv-l.e)}
+  acts.push({t:'Cắt',k,x:pv,q,pl,n:'cắt lệnh mắc '+g.map(l=>l.k).join(', ')+' (giá vào '+g.map(l=>+l.e.toFixed(8)).join(', ')+')',lots:g.map(l=>({k:l.k,e:l.e,q:l.q,ea:l.ea,d:l.d}))});
+  s.lots=s.lots.filter(l=>!g.includes(l));s.real+=pl;s.cuts++}}
+function cvgDown(b,s,k,acts){const a=b.a,st=b.st,V=b.p.capital*b.p.split/100,px=j=>a+j*st;
+ if(s.lots.some(l=>l.k==k)||(k>=0&&!s.sold.includes(k)))return;
+ const x=px(k);let q=V*(1/x-1/px(k+1)),part=false;if(q*x>s.cash){q=s.cash/x;part=true}if(!(q>1e-12))return;
+ s.cash-=q*x;s.qty+=q;s.lots.push({k,e:x,q,nw:1});acts.push({t:'Mua',k,x,q,n:'mua lô mắc '+k+(part?' (hết tiền mặt, chỉ mua phần còn đủ)':'')})}
+function cvgUp(b,s,j,acts){const a=b.a,st=b.st,V=b.p.capital*b.p.split/100,px=i=>a+i*st,k=j-1,x=px(j),L=s.lots.find(l=>l.k==k);let q,e,lots=null;
+ if(L){q=L.q;e=L.e;s.lots=s.lots.filter(l=>l!==L);lots=[{k:L.k,e:L.e,q:L.q,ea:L.ea,d:L.d}]}
+ else if(k>=0&&!s.sold.includes(k)){q=Math.min(V*(1/px(k)-1/px(k+1)),s.qty);e=a;s.sold.push(k)}
+ else return;
+ s.cash+=q*x;s.qty-=q;s.real+=q*(x-e);s.cuts++;acts.push({t:'Bán',k:j,x,q,pl:q*(x-e),n:L?'bán lô mắc '+k+' (mua ở '+(+e.toFixed(8))+')':'bán lô ban đầu mắc '+k,lots})}
+/* Lập kế hoạch khi giá đi từ s.x tới y (không đổi sổ gốc) */
+function plan(b,y){const s=JSON.parse(JSON.stringify(b.S)),acts=[],a=b.a,st=b.st,x=s.x,E=EPS;
+ if(Math.abs(y-x)/st>5000)throw Error('Giá đi quá 5000 mắc lưới. Kiểm tra lại giá hoặc khoảng lưới.');
+ const g=!!ENG[b.m].grid;
+ if(y>x+E*st){for(let k=Math.floor((x-a)/st+E)+1,h=Math.floor((y-a)/st+E);k<=h;k++){g?gridLevel(b,s,k,1,acts):cvgUp(b,s,k,acts)}}
+ else if(y<x-E*st){for(let k=Math.ceil((x-a)/st-E)-1,l=Math.ceil((y-a)/st-E);k>=l;k--){g?gridLevel(b,s,k,-1,acts):cvgDown(b,s,k,acts)}}
+ s.x=y;return{s,acts}}
+
+const $=id=>document.getElementById('g_'+id);
+const fmt=(v,d=4)=>isFinite(v)?Number(v).toLocaleString('vi-VN',{maximumFractionDigits:d}):'–';
+const cls=v=>v>1e-9?'pos':v<-1e-9?'neg':'';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const MS={
+ pp1:{name:'PP1: Only buy grid',tag:'Lưới · chỉ mua · spot',desc:'Giá chạm mắc chưa có lệnh thì mua 1 lệnh (lên hay xuống đều mua). Lệnh cao nhất đang lỗ thì cắt cùng các lệnh thấp nhất đang lãi sao cho tổng dương.',params:'grid'},
+ pp2:{name:'PP2: Constant Value Grid',tag:'Cân bằng giá trị · spot',desc:'Giữ giá trị sản phẩm V = vốn × tỷ lệ. Giá lên một mắc thì bán phần dư, giá xuống một mắc thì mua một lô. Lô mua khi giá xuống chỉ bán khi giá hồi lên một mắc.',params:'cvg'},
+ pp4:{name:'PP4: Only buy grid · Mua khi hồi',tag:'Lưới · chỉ mua · spot · mua khi giá tăng',desc:'Như PP1 nhưng giá đi xuống chạm mắc thì không mua. Chỉ mua khi giá đi lên chạm mắc chưa có lệnh. Cách cắt giữ nguyên.',params:'grid'}};
+const PDEF={grid:[{k:'mode',l:'Kiểu khoảng cách lưới',t:'sel',o:[['pct','% của giá khởi tạo'],['abs','Số cố định (đơn vị giá)']],v:'pct'},{k:'step',l:'Khoảng cách lưới',v:1},{k:'qty',l:'Số lượng mỗi lệnh',v:100},{k:'max',l:'Tối đa lệnh mở (0 = không giới hạn)',v:0}],
+ cvg:[{k:'mode',l:'Kiểu khoảng cách lưới',t:'sel',o:[['pct','% của giá khởi tạo'],['abs','Số cố định (đơn vị giá)']],v:'pct'},{k:'step',l:'Khoảng cách lưới',v:1},{k:'capital',l:'Nguồn vốn',v:100000000},{k:'split',l:'Tỷ lệ chia cho sản phẩm (%)',v:70}]};
+const COMMON=['Sàn gộp lệnh: bán bất kỳ X đơn vị nào trên sàn cũng như nhau. Sổ ảo ghi lại theo phương pháp lệnh nào đã đóng, lệnh nào còn giữ.','Lệnh gợi ý = số lượng sổ ảo cần có − số lượng thực tế đã khớp, làm tròn theo bước khối lượng. Phần khớp thiếu hoặc phần lẻ do làm tròn sẽ được bù ở lần sau.','Phương pháp chạy theo giá mắc lưới. Giá khớp thật chỉ dùng để tính lãi theo sàn và ghi vào lệnh ảo.','Lãi theo sàn tính bằng giá vốn trung bình như sàn. Lãi theo sổ ảo tính theo từng lệnh ở giá mắc. Hai số khác nhau là bình thường (trượt giá, làm tròn, cách chia lãi).','App chỉ biết những giá bạn nhập. Nếu giá đi qua lại nhiều mắc mà bạn không nhập, app coi như giá đi thẳng từ giá trước tới giá mới.','Hàng về: cộng số phiên làm việc (bỏ thứ 7, chủ nhật), chưa tính ngày lễ. Phương pháp bảo bán mà hàng chưa về đủ thì app báo chờ, không tự đổi quy tắc.','Chỉ giao dịch spot, không bán khống (PP3 Direction Grid không dùng được trên sàn gộp lệnh). Chưa tính phí, thuế.','Dữ liệu lưu trong trình duyệt của máy này. Nên sao lưu thường xuyên. Không phải lời khuyên tài chính.'];
+const MNOTES={pp1:['Mỗi mắc tối đa 1 lệnh. Lúc bắt đầu tại giá khởi tạo chưa mua.','Cắt: lệnh cao nhất đang lỗ thì cắt cùng ít lệnh thấp nhất đang lãi nhất sao cho tổng dương, lặp đến khi hết cắt được. Không chốt lời riêng, không cắt lỗ.'],
+ pp2:['Lúc tạo sổ, app báo mua phần sản phẩm ban đầu V ÷ giá khởi tạo.','Giá xuống chạm mắc k: mua lô k. Giá lên chạm mắc j: bán lô j−1. Hết tiền mặt (theo sổ) thì chỉ mua phần còn đủ.','Tiền mặt trong app là tiền mặt theo sổ (giá mắc), có thể lệch nhẹ với tiền thật trên sàn.'],
+ pp4:['Giá đi xuống chạm mắc: không mua. Giá đi lên chạm mắc chưa có lệnh: mua 1 lệnh. Lúc bắt đầu chưa mua.','Cắt như PP1, xét ở mọi mắc kể cả khi giá đi xuống.']};
+let DB={books:{},cur:null},P=null,delArm=0,storeOK=true;
+try{const v=JSON.parse(localStorage.getItem('tlg_v1')||'null');if(v&&v.books)DB=v}catch(e){storeOK=false}
+const save=()=>{try{localStorage.setItem('tlg_v1',JSON.stringify(DB))}catch(e){storeOK=false}};
+const B=()=>DB.books[DB.cur];
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+function addBD(s,n){const d=new Date(s+'T12:00:00');let k=0;while(k<n){d.setDate(d.getDate()+1);const w=d.getDay();if(w&&w<6)k++}return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+const cln=v=>Math.abs(v)<1e-10?0:+v.toPrecision(12);
+const rnd=(b,v)=>cln(b.lot>0?Math.round(v/b.lot+(v>0?1e-9:-1e-9))*b.lot:v);
+function acct(b){let pos=0,cost=0,real=0,un=0;const t=today();
+ for(const f of b.fills){if(f.q>0){pos+=f.q;cost+=f.q*f.px;if(f.sd>t)un+=f.q}else{const q=-f.q,av=pos>0?cost/pos:0;real+=q*(f.px-av);cost-=q*av;pos-=q}}
+ pos=cln(pos);return{pos,cost:pos>0?cost:0,avg:pos>0?cost/pos:0,real,un,sell:Math.max(0,cln(pos-un))}}
+const lq=b=>ledgerQty(b.m,b.S);
+const lvl=(b,x)=>(x-b.a)/b.st;
+const err=(i,m)=>{$('err'+i).textContent=m||''};
+
+/* ===== Danh sách sổ ===== */
+function renderBooks(){const ids=Object.keys(DB.books);
+ $('bk').innerHTML=ids.length?ids.map(i=>`<option value="${i}"${i==DB.cur?' selected':''}>${esc(DB.books[i].name)}</option>`).join(''):'<option>(chưa có sổ)</option>';
+ $('delB').hidden=!ids.length;delArm=0;$('delB').textContent='Xóa sổ này';
+ const b=B();$('work').hidden=!b;
+ if(!b){$('bkInfo').textContent='Chưa có sổ nào. Bấm “+ Sổ mới” để bắt đầu.'+(storeOK?'':' Trình duyệt không cho lưu dữ liệu: sổ sẽ mất khi đóng trang, hãy sao lưu.');renderNotes(null);return}
+ const p=b.p;$('bkInfo').innerHTML=`<b>${esc(b.name)}</b> · ${esc(b.prod||'sản phẩm')} · ${MS[b.m].name}<br>Giá khởi tạo ${fmt(b.a,8)} · lưới ${fmt(b.st,8)}${p.mode=='pct'?' ('+fmt(p.step)+'%)':''} · ${b.m=='pp2'?'vốn '+fmt(p.capital,0)+', '+fmt(p.split)+'% sản phẩm':'mỗi lệnh '+fmt(p.qty,8)}${p.max>0?' · tối đa '+p.max+' lệnh':''} · bước khối lượng ${fmt(b.lot,8)} · hàng về T+${b.tn}`+(storeOK?'':'<br><span class="neg">Trình duyệt không cho lưu dữ liệu. Hãy sao lưu trước khi đóng trang.</span>');
+ renderNotes(b.m);renderAll()}
+function renderNotes(m){$('notesT').textContent=m?'Giả định · '+MS[m].name:'Giả định chung';$('notes').innerHTML=(m?MNOTES[m]:[]).concat(COMMON).map(t=>'<li>'+t+'</li>').join('')}
+
+/* ===== Tạo sổ ===== */
+function renderForm(){const m=$('nm').value,M=MS[m];$('minfo').innerHTML=`<b>${M.name}</b><small>${M.tag}</small><p>${M.desc}</p>`;
+ $('nParams').innerHTML=PDEF[M.params].map(q=>`<label>${q.l}${q.t=='sel'?`<select id="g_q_${q.k}">${q.o.map(o=>`<option value="${o[0]}"${o[0]==q.v?' selected':''}>${o[1]}</option>`).join('')}</select>`:`<input id="g_q_${q.k}" type="number" step="any" inputmode="decimal" value="${q.v}">`}</label>`).join('')}
+function create(){err(1);try{const m=$('nm').value,p={},f=parseFloat;
+ PDEF[MS[m].params].forEach(q=>{const v=$('q_'+q.k).value;p[q.k]=q.t=='sel'?v:f(v)});
+ const a=f($('nA').value),lot=f($('nLot').value)||0,tn=parseInt($('nTn').value)||0,d=$('nD').value||today();
+ if(!(a>0))throw Error('Hãy nhập giá khởi tạo lớn hơn 0.');
+ if(!(p.step>0))throw Error('Khoảng cách lưới phải lớn hơn 0.');
+ if(m=='pp2'){if(!(p.capital>0)||!(p.split>0)||p.split>100)throw Error('Nguồn vốn phải lớn hơn 0, tỷ lệ sản phẩm trong khoảng 0–100%.')}
+ else{if(!(p.qty>0))throw Error('Số lượng mỗi lệnh phải lớn hơn 0.');if(!(p.max>=0))p.max=0;if(lot>0&&Math.abs(p.qty/lot-Math.round(p.qty/lot))>1e-9)throw Error('Số lượng mỗi lệnh nên là bội số của bước khối lượng ('+fmt(lot,8)+').')}
+ if(lot<0||tn<0)throw Error('Bước khối lượng và số phiên chờ không được âm.');
+ const id='b'+Date.now(),st=stepOf(p,a);
+ DB.books[id]={id,name:$('nName').value.trim()||((($('nProd').value.trim())||'Sổ')+' · '+MS[m].name.split(':')[0]),prod:$('nProd').value.trim(),m,p,a,st,lot,tn,start:d,S:newState(m,p,a),fills:[],hist:[],undo:[],px:a};
+ DB.cur=id;save();$('newC').hidden=true;P=null;$('px').value=a;renderBooks()}catch(e){err(1,e.message)}}
+
+/* ===== Lệnh ===== */
+function orderBox(q,ref){if(!q)return'<div class="order n">Không cần đặt lệnh trên sàn</div>';return`<div class="order ${q>0?'b':'s'}">${q>0?'MUA':'BÁN'} ${fmt(Math.abs(q),8)}${ref?' · giá tham khảo '+fmt(ref,8):''}</div>`}
+function fillForm(q,ref,lab){return`<div class="grid"><label>Số lượng đã khớp (${q>=0?'mua':'bán'})<input id="g_fq" type="number" step="any" inputmode="decimal" value="${Math.abs(q)}"></label><label>Giá khớp trung bình<input id="g_fp" type="number" step="any" inputmode="decimal" value="${ref}"></label><label>Ngày khớp<input id="g_fd" type="date" value="${today()}"></label></div><div class="row"><button class="u" id="g_okB">${lab}</button><button class="s" id="g_noB">Chưa khớp, để sau</button></div>`}
+const actLine=a=>`<li>Mắc ${a.k} · giá ${fmt(a.x,8)}: <b>${a.t}</b> ${fmt(a.q,8)} · ${esc(a.n)}${a.pl!=null?` · lãi theo sổ <span class="${cls(a.pl)}">${fmt(a.pl)}</span>`:''}</li>`;
+function sellWarn(b,q){if(q>=0)return'';const A=acct(b);if(-q>A.pos+1e-9)return`<p class="err">Thực tế chỉ đang có ${fmt(A.pos,8)}, không đủ để bán ${fmt(-q,8)}.</p>`;if(-q>A.sell+1e-9)return`<p class="err">Chờ hàng về: hiện chỉ bán được ${fmt(A.sell,8)} (còn ${fmt(A.un,8)} chưa về). Phương pháp vẫn giữ nguyên lệnh bán. Bạn có thể bán phần đang có, hoặc để số lượng 0 rồi xác nhận: sổ ảo ghi nhận theo phương pháp, phần chưa bán sẽ hiện ở “lệnh bù” khi hàng về.</p>`;return''}
+function calc(y){const b=B();err(2);if(!b)return;
+ if(!(y>0)){err(2,'Hãy nhập giá hiện tại lớn hơn 0.');return}
+ try{const r=plan(b,y);
+  if(!r.acts.length){b.S.x=y;b.px=y;save();P=null;renderAll('Giá '+fmt(y,8)+' chưa chạm mắc lưới mới. Không có lệnh theo phương pháp.');return}
+  const A=acct(b),q=rnd(b,ledgerQty(b.m,r.s)-A.pos);P={y,s:r.s,acts:r.acts,q};renderAll()}catch(e){err(2,e.message)}}
+function renderTodo(msg){const b=B(),el=$('todo');
+ if(P){const ref=P.acts[P.acts.length-1].x;
+  el.innerHTML=`<p class="cap" style="margin-top:12px">Giá ${fmt(P.y,8)} · theo phương pháp, sổ ảo sẽ:</p><ul class="acts">${P.acts.map(actLine).join('')}</ul>${orderBox(P.q,ref)}${sellWarn(b,P.q)}${P.q?'<p class="cap">Sàn gộp lệnh nên chỉ cần đặt một lệnh với số lượng ròng ở trên. Khớp xong nhập số lượng và giá khớp thật.</p>':'<p class="cap">Mua và bán trong sổ ảo bù trừ nhau, nên trên sàn không cần làm gì. Bấm xác nhận để cập nhật sổ.</p>'}`+fillForm(P.q,ref,P.q?'Xác nhận đã khớp':'Xác nhận cập nhật sổ');
+  $('okB').onclick=()=>confirmFill(true);$('noB').onclick=()=>{P=null;renderAll('Chưa cập nhật sổ. Khi lệnh khớp, nhập lại giá để tính lệnh.')};return}
+ const A=acct(b),g=rnd(b,lq(b)-A.pos);
+ if(g){const ref=b.px,first=!b.fills.length&&!b.hist.length;
+  el.innerHTML=`<p class="st">${msg?esc(msg)+'<br>':''}${first?'Sổ mới: cần mua phần sản phẩm ban đầu theo phương pháp.':'Sổ ảo đang lệch với số lượng thực tế đã khớp. Cần đặt lệnh bù:'}</p>${orderBox(g,ref)}${sellWarn(b,g)}`+fillForm(g,ref,'Xác nhận đã khớp lệnh bù');
+  $('okB').onclick=()=>confirmFill(false);$('noB').onclick=()=>{$('todo').innerHTML='<p class="st">Đã ẩn lệnh bù. Lệnh bù sẽ hiện lại khi bạn nhập giá.</p>'};return}
+ el.innerHTML=`<p class="st">${msg?esc(msg)+'<br>':''}Sổ ảo khớp với thực tế. Chờ giá chạm mắc kế tiếp (xem mục 3), rồi nhập giá và bấm “Tính lệnh”.</p>`}
+function confirmFill(isPlan){const b=B();err(2);
+ const f=parseFloat,aq=f($('fq').value)||0,px=f($('fp').value),d=$('fd').value||today();
+ const want=isPlan?P.q:rnd(b,lq(b)-acct(b).pos),side=want>0?1:want<0?-1:0;
+ if(aq<0){err(2,'Số lượng không được âm.');return}
+ if(aq>0&&!(px>0)){err(2,'Hãy nhập giá khớp lớn hơn 0.');return}
+ if(aq>0&&!side){err(2,'Lần này không cần đặt lệnh, để số lượng 0.');return}
+ const q=side*aq,A=acct(b);
+ if(q<0&&-q>A.pos+1e-9){err(2,'Không thể bán nhiều hơn số lượng thực tế đang có ('+fmt(A.pos,8)+').');return}
+ if(q<0&&-q>A.sell+1e-9){err(2,'Hàng chưa về đủ: hiện chỉ bán được '+fmt(A.sell,8)+'.');return}
+ if(!isPlan&&!aq){err(2,'Nhập số lượng đã khớp.');return}
+ b.undo.push(JSON.stringify({S:b.S,fills:b.fills,hist:b.hist,px:b.px}));if(b.undo.length>40)b.undo.shift();
+ if(isPlan){for(const l of P.s.lots)if(l.nw){delete l.nw;l.ea=aq>0?px:null;l.d=d}b.S=P.s;b.px=P.y}
+ if(aq>0)b.fills.push({d,q,px,sd:q>0?addBD(d,b.tn):d});
+ b.hist.push({d,y:isPlan?P.y:b.px,acts:isPlan?P.acts.map(a=>({t:a.t,k:a.k,x:a.x,q:a.q,pl:a.pl,n:a.n})):[],q,px:aq>0?px:null,bu:!isPlan});
+ P=null;save();renderAll(aq>0?'Đã ghi '+(q>0?'mua ':'bán ')+fmt(aq,8)+' giá '+fmt(px,8)+'.':'Đã cập nhật sổ.')}
+function undo(){const b=B();if(!b)return;const u=b.undo.pop();if(!u){err(2,'Không còn thao tác nào để hoàn tác.');return}const o=JSON.parse(u);Object.assign(b,o);P=null;save();renderAll('Đã hoàn tác thao tác cuối.')}
+function nextLv(b,d){const x=b.S.x,k=d>0?Math.floor(lvl(b,x)+1e-9)+1:Math.ceil(lvl(b,x)-1e-9)-1;return b.a+k*b.st}
+
+/* ===== Hiển thị ===== */
+function ladder(){const b=B(),A=acct(b),base=A.pos+rnd(b,lq(b)-A.pos),N=4,row=(y,o,acts,now)=>`<div class="lr${now?' now':''}"><span>${now?'▶ Giá gần nhất':'Mắc '+Math.round(lvl(b,y))}</span><b>${fmt(y,8)}</b><em class="${now?'':o>0?'pos':o<0?'neg':''}">${now?'':o?(o>0?'Mua ':'Bán ')+fmt(Math.abs(o),8):acts?'sổ ảo tự bù trừ':'–'}</em></div>`;
+ const go=d=>{let s=JSON.parse(JSON.stringify(b.S)),act=base;const out=[];
+  for(let i=0;i<N;i++){const t={...b,S:s},y=nextLv(t,d);if(!(y>0))break;const r=plan(t,y);s=r.s;const o=rnd(b,ledgerQty(b.m,s)-act);act+=o;out.push(row(y,o,r.acts.length))}return out};
+ try{$('lad').innerHTML=go(1).reverse().join('')+row(b.px,0,0,1)+go(-1).join('')}catch(e){$('lad').innerHTML='<p class="err">'+esc(e.message)+'</p>'}}
+function metrics(){const b=B(),A=acct(b),L=lq(b),x=b.px,g=cln(L-A.pos);let fl=0;
+ if(b.m=='pp2')fl=b.S.cash+b.S.qty*x-b.p.capital-b.S.real;else for(const l of b.S.lots)fl+=l.q*(x-l.e);
+ const fs=A.pos*x-A.cost,M=[['Giá gần nhất',fmt(x,8)+' · mắc '+fmt(lvl(b,x),2),''],['Số lượng theo sổ ảo',fmt(L,8),''],['Số lượng thực tế (đã khớp)',fmt(A.pos,8),''],['Chênh lệch (sổ − thực tế)',fmt(g,8),Math.abs(g)>1e-9?'wn':''],['Bán được ngay',fmt(A.sell,8),''],['Đang chờ về',fmt(A.un,8),A.un>0?'wn':''],
+  ['Giá vốn TB (như sàn)',fmt(A.avg,8),''],['Lãi đã chốt theo sàn',fmt(A.real),cls(A.real)],['Thả nổi theo sàn',fmt(fs),cls(fs)],['Lãi đã chốt theo sổ ảo',fmt(b.S.real),cls(b.S.real)],['Thả nổi theo sổ ảo',fmt(fl),cls(fl)],[b.m=='pp2'?'Số lần bán':'Số lần cắt',fmt(b.S.cuts,0),'']];
+ if(b.m=='pp2')M.push(['Tiền mặt theo sổ',fmt(b.S.cash),''],['Tổng nguồn vốn theo sổ',fmt(b.S.cash+b.S.qty*x),'']);
+ $('mt').innerHTML=M.map(m=>`<div><span>${m[0]}</span><b class="${m[2]}">${m[1]}</b></div>`).join('')}
+function lots(){const b=B(),x=b.px,t=today(),L=b.S.lots.slice().sort((u,v)=>v.k-u.k);let h='';
+ const r=l=>{const sd=l.d?addBD(l.d,b.tn):null,f=l.q*(x-l.e);return`<tr><td>${l.k}</td><td>${fmt(l.e,8)}</td><td>${l.ea!=null?fmt(l.ea,8):'–'}</td><td>${fmt(l.q,8)}</td><td>${l.d||'–'}</td><td class="${sd&&sd>t?'wn':''}">${sd?(sd>t?sd:'đã về'):'–'}</td><td class="${cls(f)}">${fmt(f)}</td></tr>`};
+ if(b.m=='pp2'){const ex=L.reduce((s,l)=>s+l.q,0),ini=cln(b.S.qty-ex);h+=`<p class="cap">Lô ban đầu còn giữ: ${fmt(ini,8)} đơn vị, giá vốn ${fmt(b.a,8)}. Đã bán lô ban đầu ở các mắc: ${b.S.sold.length?b.S.sold.slice().sort((u,v)=>u-v).join(', '):'chưa có'}.</p>`}
+ $('lots').innerHTML=h+(L.length?'<table><tr><th>Mắc</th><th>Giá mắc</th><th>Giá khớp</th><th>Số lượng</th><th>Ngày mua</th><th>Hàng về</th><th>Lãi/lỗ</th></tr>'+L.map(r).join('')+'</table>':'<p class="cap">'+(b.m=='pp2'?'Chưa có lô mua thêm nào.':'Chưa có lệnh nào đang giữ.')+'</p>')}
+function hist(){const b=B(),H=b.hist.slice().reverse();
+ $('hist').innerHTML=H.length?'<table><tr><th>Ngày</th><th>Giá</th><th class="l">Sổ ảo</th><th>Lệnh trên sàn</th></tr>'+H.map(e=>`<tr><td>${e.d}</td><td>${fmt(e.y,8)}</td><td class="l">${e.bu?'Lệnh bù':e.acts.map(a=>a.t+' mắc '+a.k+(a.pl!=null?' ('+fmt(a.pl)+')':'')).join('; ')}</td><td class="${e.q>0?'pos':e.q<0?'neg':''}">${e.q?(e.q>0?'Mua ':'Bán ')+fmt(Math.abs(e.q),8)+' · '+fmt(e.px,8):'không đặt'}</td></tr>`).join('')+'</table>':'<p class="cap">Chưa có thao tác nào.</p>';
+ $('undoB').disabled=!b.undo.length}
+function renderAll(msg){const b=B();if(!b)return;renderTodo(msg);ladder();metrics();lots();hist();$('chk').hidden=true}
+function check(){const b=B(),v=parseFloat($('exQ').value),A=acct(b),c=$('chk');c.hidden=false;
+ if(!(v>=0)){c.innerHTML='<span class="neg">Hãy nhập số lượng sàn đang hiển thị.</span>';return}
+ const d=cln(v-A.pos),g=cln(lq(b)-A.pos);
+ c.innerHTML=Math.abs(d)<1e-9?`<span class="pos">Khớp: sàn và app đều ${fmt(v,8)}.</span>`+(Math.abs(g)>1e-9?` Sổ ảo còn lệch ${fmt(g,8)} so với thực tế, xem lệnh bù ở mục 2.`:''):`<span class="neg">Lệch ${fmt(d,8)}: sàn ${fmt(v,8)}, app ghi ${fmt(A.pos,8)}.</span> Có thể bạn quên nhập một lệnh, nhập sai số lượng, hoặc có giao dịch ngoài phương pháp. Kiểm tra lịch sử ở mục 6.`}
+
+/* ===== Sự kiện ===== */
+$('nm').innerHTML=Object.entries(MS).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join('');
+$('nm').onchange=renderForm;
+$('newB').onclick=()=>{$('newC').hidden=false;$('nD').value=today();renderForm();err(1);$('newC').scrollIntoView({behavior:'smooth'})};
+$('cnB').onclick=()=>{$('newC').hidden=true};
+$('mkB').onclick=create;
+$('bk').onchange=()=>{DB.cur=$('bk').value;P=null;save();const b=B();if(b)$('px').value=b.px;renderBooks()};
+$('delB').onclick=()=>{if(!B())return;if(!delArm){delArm=1;$('delB').textContent='Bấm lần nữa để xóa hẳn';return}delete DB.books[DB.cur];DB.cur=Object.keys(DB.books)[0]||null;P=null;save();const b=B();if(b)$('px').value=b.px;renderBooks()};
+$('bkupB').onclick=()=>{$('bkup').hidden=!$('bkup').hidden};
+$('expB').onclick=()=>{$('bkTxt').value=JSON.stringify(DB);$('bkTxt').select()};
+$('impB').onclick=()=>{err(0);try{const v=JSON.parse($('bkTxt').value);if(!v||!v.books)throw 0;for(const [k,b] of Object.entries(v.books)){if(!b.S||!b.m||!MS[b.m])throw 0;b.undo=b.undo||[];DB.books[k]=b}DB.cur=v.cur&&DB.books[v.cur]?v.cur:Object.keys(DB.books)[0];save();P=null;const b=B();if(b)$('px').value=b.px;renderBooks();err(0,'')}catch(e){err(0,'Không đọc được bản sao lưu. Hãy dán đúng toàn bộ chữ đã sao lưu.')}};
+$('calcB').onclick=()=>calc(parseFloat($('px').value));
+$('upB').onclick=()=>{const b=B();if(!b)return;const y=cln(nextLv(b,1));$('px').value=y;calc(y)};
+$('dnB').onclick=()=>{const b=B();if(!b)return;const y=cln(nextLv(b,-1));if(!(y>0)){err(2,'Mắc dưới có giá không dương.');return}$('px').value=y;calc(y)};
+$('undoB').onclick=undo;$('chkB').onclick=check;
+$('csvB').onclick=()=>{const b=B();if(!b)return;const q=v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+ $('csv').hidden=false;$('csv').value=['Ngày,Giá,Sổ ảo,Lệnh sàn,Số lượng,Giá khớp'].concat(b.hist.map(e=>[e.d,e.y,e.bu?'Lệnh bù':e.acts.map(a=>a.t+' mắc '+a.k).join('; '),e.q>0?'Mua':e.q<0?'Bán':'',Math.abs(e.q||0),e.px??''].map(q).join(','))).join('\n');$('csv').select()};
+if(DB.cur&&!DB.books[DB.cur])DB.cur=Object.keys(DB.books)[0]||null;
+if(B())$('px').value=B().px;
+renderForm();renderBooks();
+})();
+</script>
+
+<script>
+/* ===== Tab Giá trực tuyến: nến Binance (REST lịch sử + WebSocket thời gian thực) ===== */
+(()=>{
+const SY=[['BTCUSDT','Bitcoin'],['ETHUSDT','Ethereum'],['BNBUSDT','BNB'],['SOLUSDT','Solana'],['XRPUSDT','XRP'],['PAXGUSDT','PAX Gold (token vàng)'],['XAUTUSDT','Tether Gold (token vàng)']];
+const TF=[['1m','M1'],['5m','M5'],['15m','M15'],['1h','H1'],['4h','H4'],['1d','D1']];
+const REST=['https://data-api.binance.vision','https://api.binance.com'];
+const WSS=['wss://data-stream.binance.vision','wss://stream.binance.com:9443'];
+const L={sym:'BTCUSDT',tf:'15m',c:[],ws:null,rt:0,retry:0,gen:0,view:90,off:0,cross:-1,rate:0,tk:null,started:false,raf:0};
+try{const v=JSON.parse(localStorage.getItem('tl_live')||'{}');if(v.sym)L.sym=v.sym;if(v.tf)L.tf=v.tf;if(v.rate>0)L.rate=+v.rate}catch(e){}
+const keep=()=>{try{localStorage.setItem('tl_live',JSON.stringify({sym:L.sym,tf:L.tf,rate:L.rate}))}catch(e){}};
+const dp=p=>p>=1000?2:p>=10?3:p>=1?4:6;
+const pf=p=>fmt(p,dp(p));
+
+function ui(){
+ const sel=$('lsel');sel.innerHTML=SY.map(s=>`<option value="${s[0]}">${s[0]} · ${s[1]}</option>`).join('')+(SY.some(s=>s[0]==L.sym)?'':`<option value="${L.sym}">${L.sym}</option>`);sel.value=L.sym;
+ $('ltf').innerHTML=TF.map(t=>`<button data-tf="${t[0]}" class="${t[0]==L.tf?'on':''}">${t[1]}</button>`).join('');
+ $('lname').textContent=L.sym;$('lrate').value=L.rate||0}
+function stat(t,c){$('lstat').textContent=t;$('ldot').className='ldot '+(c||'')}
+async function getJ(path){let e;for(const b of REST){try{const r=await fetch(b+path,{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);return await r.json()}catch(x){e=x}}throw e}
+function close(){clearTimeout(L.rt);L.rt=0;if(L.ws){const w=L.ws;L.ws=null;w.onclose=w.onerror=w.onmessage=null;try{w.close()}catch(e){}}}
+async function load(){
+ const g=++L.gen;close();L.c=[];L.off=0;L.cross=-1;L.tk=null;L.retry=0;$('lerr').textContent='';
+ $('lpx').textContent='–';$('lchg').textContent='';$('lhl').textContent='';$('lvnd').textContent='';
+ stat('Đang tải dữ liệu…','warn');ui();paint();
+ try{const k=await getJ(`/api/v3/klines?symbol=${L.sym}&interval=${L.tf}&limit=500`);if(g!==L.gen)return;
+  L.c=k.map(r=>({t:r[0],o:+r[1],h:+r[2],l:+r[3],c:+r[4]}));
+  const z=L.c[L.c.length-1];if(z)price(z.c);paint()}
+ catch(e){if(g!==L.gen)return;stat('Không tải được dữ liệu','bad');
+  $('lerr').textContent='Không lấy được giá. Nếu bạn đang mở bản lưu trong claude.ai thì bản này không được phép kết nối ra ngoài, hãy mở bản trên GitHub Pages. Nếu không, hãy kiểm tra mạng hoặc mã sản phẩm (ví dụ BTCUSDT). Chi tiết: '+e.message;return}
+ try{const t=await getJ(`/api/v3/ticker/24hr?symbol=${L.sym}`);if(g===L.gen)tick({c:+t.lastPrice,o:+t.openPrice,h:+t.highPrice,l:+t.lowPrice})}catch(e){}
+ conn(g,0)}
+function conn(g,i){if(g!==L.gen||document.hidden)return;
+ const s=L.sym.toLowerCase(),u=`${WSS[i%WSS.length]}/stream?streams=${s}@kline_${L.tf}/${s}@miniTicker`;let ws,ok=false;
+ try{ws=new WebSocket(u)}catch(e){again(g,i+1);return}
+ L.ws=ws;
+ ws.onopen=()=>{ok=true;L.retry=0;stat('Đang cập nhật trực tiếp','ok')};
+ ws.onmessage=ev=>{if(g!==L.gen)return;let m;try{m=JSON.parse(ev.data)}catch(e){return}const d=m.data||m;
+  if(d.e==='kline'){const k=d.k,b={t:k.t,o:+k.o,h:+k.h,l:+k.l,c:+k.c},z=L.c[L.c.length-1];
+   if(z&&z.t===b.t)L.c[L.c.length-1]=b;else if(!z||b.t>z.t){L.c.push(b);if(L.off>0)L.off++;if(L.c.length>2000)L.c.shift()}
+   price(b.c);paint()}
+  else if(d.e==='24hrMiniTicker')tick({c:+d.c,o:+d.o,h:+d.h,l:+d.l})};
+ ws.onerror=()=>{try{ws.close()}catch(e){}};
+ ws.onclose=()=>{if(g!==L.gen||L.ws!==ws)return;L.ws=null;stat('Mất kết nối, đang kết nối lại…','warn');again(g,ok?i:i+1)}}
+function again(g,i){clearTimeout(L.rt);const w=Math.min(30000,1000*2**L.retry++);L.rt=setTimeout(()=>conn(g,i),w)}
+function price(p){const o=$('lpx'),prev=L.last;L.last=p;o.textContent=pf(p);o.className=prev==null||p==prev?'':p>prev?'pos':'neg';vnd();document.title=pf(p)+' · '+L.sym}
+function tick(t){L.tk=t;const ch=t.o>0?(t.c/t.o-1)*100:0;$('lchg').innerHTML=`<span class="${cls(ch)}">${ch>0?'+':''}${fmt(ch,2)}%</span> trong 24 giờ`;
+ $('lhl').textContent='24 giờ · cao '+pf(t.h)+' · thấp '+pf(t.l);if(L.last==null)price(t.c)}
+function vnd(){$('lvnd').textContent=L.rate>0&&L.last?'≈ '+fmt(L.last*L.rate,0)+' ₫ (theo tỷ giá bạn nhập)':''}
+
+/* ----- Vẽ biểu đồ nến ----- */
+let G=null;
+function paint(){if(L.raf)return;L.raf=requestAnimationFrame(()=>{L.raf=0;drawC()})}
+function drawC(){const cv=$('lc');if($('tabLive').hidden)return;const W=cv.clientWidth,H=cv.clientHeight;if(!W||!H)return;
+ const d=devicePixelRatio||1;cv.width=W*d;cv.height=H*d;const g=cv.getContext('2d');g.scale(d,d);
+ const cs=getComputedStyle(document.documentElement),gv=k=>cs.getPropertyValue(k).trim(),C=L.c;
+ g.font='11px system-ui';g.textBaseline='middle';
+ if(!C.length){g.fillStyle=gv('--mu');g.fillText('Chưa có dữ liệu',12,20);G=null;return}
+ const R=W<420?54:66,T=10,Bt=22,cw=W-R,ch=H-T-Bt;
+ const n=Math.max(15,Math.min(L.view,500)),end=C.length-L.off,st=Math.max(0,end-n),vis=C.slice(st,end),sh=n-vis.length;
+ let lo=Infinity,hi=-Infinity;for(const b of vis){if(b.l<lo)lo=b.l;if(b.h>hi)hi=b.h}
+ if(L.last&&L.off==0){lo=Math.min(lo,L.last);hi=Math.max(hi,L.last)}
+ if(hi==lo){hi*=1.001;lo*=.999}const pd=(hi-lo)*.07;hi+=pd;lo-=pd;
+ const y=v=>T+ch*(1-(v-lo)/(hi-lo)),bw=cw/n,x=i=>(i+sh+.5)*bw,dc=dp(hi);
+ G={st,sh,bw,vis,cw};
+ g.strokeStyle=gv('--bd');g.lineWidth=1;g.fillStyle=gv('--mu');g.textAlign='left';
+ for(let j=0;j<=4;j++){const v=lo+(hi-lo)*(j+.5)/5,yy=Math.round(y(v))+.5;g.beginPath();g.moveTo(0,yy);g.lineTo(cw,yy);g.stroke();g.fillText(fmt(v,dc),cw+5,yy)}
+ const day=L.tf=='1d',lab=t=>{const D=new Date(t),p=v=>String(v).padStart(2,'0');return day?p(D.getDate())+'/'+p(D.getMonth()+1):p(D.getHours())+':'+p(D.getMinutes())},every=Math.max(1,Math.round(80/bw));
+ g.textAlign='center';
+ vis.forEach((b,i)=>{if((st+i)%every)return;const xx=Math.round(x(i))+.5;g.strokeStyle=gv('--bd');g.beginPath();g.moveTo(xx,T);g.lineTo(xx,T+ch);g.stroke();g.fillText(lab(b.t),xx,H-Bt/2)});
+ const bd=Math.max(1,Math.min(14,bw*.7)),up=gv('--up'),dn=gv('--dn');
+ vis.forEach((b,i)=>{const c=b.c>=b.o?up:dn,xx=x(i);g.strokeStyle=g.fillStyle=c;g.beginPath();g.moveTo(Math.round(xx)+.5,y(b.h));g.lineTo(Math.round(xx)+.5,y(b.l));g.stroke();
+  const y1=y(Math.max(b.o,b.c)),y2=y(Math.min(b.o,b.c));g.fillRect(xx-bd/2,y1,bd,Math.max(1,y2-y1))});
+ if(L.last){const yy=Math.round(y(L.last))+.5,z=C[C.length-1],c=z&&z.c<z.o?dn:up;g.setLineDash([4,3]);g.strokeStyle=c;g.beginPath();g.moveTo(0,yy);g.lineTo(cw,yy);g.stroke();g.setLineDash([]);
+  if(yy>=T&&yy<=T+ch){g.fillStyle=c;g.fillRect(cw,yy-9,R,18);g.fillStyle='#fff';g.textAlign='left';g.fillText(fmt(L.last,dc),cw+5,yy)}}
+ if(L.cross>=0&&L.cross<vis.length){const b=vis[L.cross],xx=Math.round(x(L.cross))+.5;g.strokeStyle=gv('--mu');g.setLineDash([2,3]);g.beginPath();g.moveTo(xx,T);g.lineTo(xx,T+ch);g.stroke();g.setLineDash([]);
+  const D=new Date(b.t),p=v=>String(v).padStart(2,'0'),ts=p(D.getDate())+'/'+p(D.getMonth()+1)+' '+p(D.getHours())+':'+p(D.getMinutes()),
+   ln=[ts,'Mở '+fmt(b.o,dc),'Cao '+fmt(b.h,dc),'Thấp '+fmt(b.l,dc),'Đóng '+fmt(b.c,dc),(b.c>=b.o?'+':'')+fmt((b.c/b.o-1)*100,2)+'%'],bwd=128,bx=xx>cw/2?8:cw-bwd-8;
+  g.fillStyle=gv('--card');g.strokeStyle=gv('--bd');g.fillRect(bx,T+4,bwd,ln.length*16+8);g.strokeRect(bx+.5,T+4.5,bwd,ln.length*16+8);g.textAlign='left';
+  ln.forEach((t,j)=>{g.fillStyle=j==5?(b.c>=b.o?up:dn):gv('--tx');g.fillText(t,bx+8,T+16+j*16)})}}
+
+/* ----- Thao tác chạm / chuột ----- */
+{const cv=$('lc');let P=null;
+ cv.addEventListener('pointerdown',e=>{P={x:e.clientX,y:e.clientY,off:L.off,mv:false,id:e.pointerId}});
+ cv.addEventListener('pointermove',e=>{if(!G)return;
+  if(P&&P.id===e.pointerId){const dx=e.clientX-P.x;if(!P.mv&&Math.abs(dx)>6&&Math.abs(dx)>Math.abs(e.clientY-P.y)){P.mv=true;try{cv.setPointerCapture(e.pointerId)}catch(x){}}
+   if(P.mv){L.off=Math.max(0,Math.min(L.c.length-15,P.off+Math.round(dx/G.bw)));L.cross=-1;paint()}}
+  else if(e.pointerType==='mouse'){L.cross=idx(e);paint()}});
+ const endP=e=>{if(P&&!P.mv&&e.type==='pointerup'){const i=idx(e);L.cross=L.cross===i?-1:i;paint()}P=null};
+ cv.addEventListener('pointerup',endP);cv.addEventListener('pointercancel',endP);
+ cv.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!P){L.cross=-1;paint()}});
+ cv.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY>0?1.15:1/1.15)},{passive:false});
+ function idx(e){const r=cv.getBoundingClientRect(),i=Math.floor((e.clientX-r.left)/G.bw)-G.sh;return e.clientX-r.left>G.cw||i<0||i>=G.vis.length?-1:i}}
+function zoom(f){L.view=Math.max(20,Math.min(500,Math.round(L.view*f)));L.cross=-1;paint()}
+
+/* ----- Nút và chuyển tab ----- */
+$('ltf').onclick=e=>{const b=e.target.closest('button');if(!b||b.dataset.tf==L.tf)return;L.tf=b.dataset.tf;keep();load()};
+$('lsel').onchange=()=>{L.sym=$('lsel').value;keep();load()};
+const go=()=>{const v=$('lcus').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');if(!/^[A-Z0-9]{5,20}$/.test(v)){$('lerr').textContent='Mã không hợp lệ. Ví dụ: ADAUSDT, DOGEUSDT.';return}L.sym=v;$('lcus').value='';keep();load()};
+$('lgo').onclick=go;$('lcus').onkeydown=e=>{if(e.key==='Enter')go()};
+$('lzi').onclick=()=>zoom(1/1.4);$('lzo').onclick=()=>zoom(1.4);$('lnow').onclick=()=>{L.off=0;L.cross=-1;paint()};
+$('lrate').oninput=()=>{const v=parseFloat($('lrate').value);L.rate=v>0?v:0;keep();vnd()};
+$('luse').onclick=()=>{if(!L.c.length){$('lerr').textContent='Chưa có nến nào để đưa vào Lab.';return}
+ const end=L.c.length-L.off,B=L.c.slice(Math.max(0,end-Math.max(15,L.view)),end),p=v=>String(v).padStart(2,'0'),ts=t=>{const D=new Date(t);return D.getFullYear()+'-'+p(D.getMonth()+1)+'-'+p(D.getDate())+' '+p(D.getHours())+':'+p(D.getMinutes())};
+ $('csv').value='time,open,high,low,close\n'+B.map(b=>[ts(b.t),b.o,b.h,b.l,b.c].join(',')).join('\n');
+ $('mode').value='auto';$('mode').onchange();show('lab');
+ $('stat').textContent='Đã nạp '+B.length+' nến '+L.sym+' khung '+(TF.find(t=>t[0]==L.tf)||[0,L.tf])[1]+' từ tab Giá trực tuyến. Chọn phương pháp rồi bấm “Đặt lại với thông số này”.';
+ scrollTo({top:0})};
+function show(t){if(!['lab','gop','gia'].includes(t))t='lab';const live=t==='gia';
+ [['lab','tabLab','tbLab'],['gop','tabGop','tbGop'],['gia','tabLive','tbLive']].forEach(([k,p,b])=>{$(p).hidden=k!==t;$(b).classList.toggle('on',k===t)});
+ try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t)}catch(e){}
+ if(live){if(!L.started){L.started=true;load()}else{if(!L.ws&&!L.rt)conn(L.gen,0);paint()}}else if(t==='lab'&&S)charts()}
+$('tbLab').onclick=()=>show('lab');$('tbGop').onclick=()=>show('gop');$('tbLive').onclick=()=>show('gia');
+addEventListener('hashchange',()=>show(location.hash.slice(1)));
+addEventListener('resize',paint);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',paint);
+document.addEventListener('visibilitychange',()=>{if(document.hidden){close();L.rt=0}else if(L.started&&!$('tabLive').hidden)load()});
+ui();show(location.hash.slice(1));
+})();
+</script>
+</body>
+</html>
