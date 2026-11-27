@@ -17,6 +17,7 @@
 
 ## Quy trình sau mỗi lần sửa
 1. Kiểm tra app không lỗi (không lỗi JS, chạy được cả 4 tab).
+   Đổi hằng số `APP_VER` ở cuối `index.html` (ví dụ `2026-11-27.4`) để app trên iPhone tự nhận ra bản mới.
 2. Commit với lời nhắn tiếng Việt.
 3. Gộp (merge) thẳng vào nhánh `main` để GitHub Pages cập nhật.
 4. Sau khi push, cập nhật bản copy `index.html` vào artifact **Trading Lab**: https://claude.ai/artifact/5cf3XchL4Vqsf95AQRRnUq (đăng lại vào đúng URL này, không tạo artifact mới).
