@@ -93,9 +93,14 @@ label.chk input{width:22px;height:22px;flex:none;margin:0}
 #tabLoc #f_detB button{flex:1 1 140px}
 /* Bản đồ tương quan (tab Giá trực tuyến) */
 #lcm{border-collapse:separate;border-spacing:2px;width:auto;margin:0 auto;font-size:11.5px;font-variant-numeric:tabular-nums}
-#lcm th{padding:2px 4px;border:0;font-size:11px;color:var(--mu);font-weight:600;text-align:center}
-#lcm th.r{text-align:right;padding-right:6px}
-#lcm td{width:40px;min-width:36px;height:36px;padding:0;border:0;border-radius:5px;text-align:center;font-weight:600;cursor:pointer;color:var(--tx)}
+#lcw{overflow:auto;max-height:78vh;margin-top:10px;-webkit-overflow-scrolling:touch}
+#lcm th{padding:2px 4px;border:0;font-size:11px;color:var(--mu);font-weight:600;text-align:center;background:var(--card)}
+#lcm tr.hs th{position:sticky;top:0;z-index:2}
+#lcm th.r{position:sticky;left:0;z-index:1;box-shadow:3px 0 0 var(--card);text-align:right;padding-right:6px}#lcm tr.hs th.r{z-index:3}
+#lcm th.gh{color:var(--tx);font-size:10.5px;text-align:left;padding:2px 2px 0;border-bottom:2px solid var(--bd)}
+#lcm th.hl{color:var(--ac)}
+#lcm td{width:40px;min-width:38px;height:36px;padding:0;border:0;border-radius:5px;background-clip:padding-box;text-align:center;font-weight:600;cursor:pointer;color:var(--tx)}
+#lcm .g{border-left:6px solid transparent}#lcm tr.gt>*{border-top:6px solid transparent}#lcm th.gh.g{border-left-width:6px}
 #lcm td.w{color:#fff}#lcm td.na{background:var(--bg);color:var(--mu);cursor:default}#lcm td.self{background:var(--bg);color:var(--mu)}
 #lcm td.on{outline:2px solid var(--ac);outline-offset:-1px}
 .cleg{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--mu);margin:10px auto 0;max-width:320px}
@@ -132,14 +137,14 @@ label.chk input{width:22px;height:22px;flex:none;margin:0}
 </section>
 <section class="card">
 <h2>Bản đồ tương quan</h2>
-<p class="cap" style="margin-top:0">Tương quan giữa từng cặp sản phẩm trong danh sách, tính trên mức thay đổi giá đóng cửa từ nến này sang nến kế tiếp. Xanh lá: cùng chiều · đỏ: nghịch chiều · màu càng đậm thì tương quan càng mạnh.</p>
+<p class="cap" style="margin-top:0">Tương quan giữa từng cặp sản phẩm trong danh sách (xếp theo lĩnh vực), tính trên mức thay đổi giá đóng cửa từ nến này sang nến kế tiếp. Xanh lá: cùng chiều · đỏ: nghịch chiều · màu càng đậm thì tương quan càng mạnh. Bảng lớn: vuốt ngang/dọc để xem hết, cột và hàng tên sản phẩm được ghim.</p>
 <div class="grid">
  <label>Khung nến<select id="lctf"></select></label>
  <label>Số nến<select id="lcn"><option value="100">100</option><option value="200">200</option><option value="500">500</option><option value="1000">1000</option></select></label>
 </div>
 <div class="row"><button id="lcgo">Tính tương quan</button></div>
 <div class="st" id="lcst">Mở tab này để tính tương quan.</div>
-<div class="sc" style="margin-top:10px"><table id="lcm"></table></div>
+<div id="lcw"><table id="lcm"></table></div>
 <div class="cleg" id="lcleg" hidden><span>−1 nghịch chiều</span><i></i><span>+1 cùng chiều</span></div>
 <div class="cap" id="lcinfo" style="margin-top:8px;text-align:center"></div>
 <div class="err" id="lcerr"></div>
@@ -363,7 +368,17 @@ const $=id=>document.getElementById(id);
 const fmt=(v,d=2)=>isFinite(v)?Number(v).toLocaleString('vi-VN',{maximumFractionDigits:d}):'–';
 const cls=v=>v>0?'pos':v<0?'neg':'';
 /* Sản phẩm và khung nến của tab Giá trực tuyến, dùng chung cho mục tải dữ liệu của Lab */
-const LIVE_SY=[['BTCUSDT','Bitcoin'],['ETHUSDT','Ethereum'],['BNBUSDT','BNB'],['SOLUSDT','Solana'],['XRPUSDT','XRP'],['PAXGUSDT','PAX Gold (token vàng)'],['XAUTUSDT','Tether Gold (token vàng)']];
+/* Mỗi sản phẩm: [mã Binance, tên, lĩnh vực]; lĩnh vực: [mã, tên đầy đủ, tên ngắn trên bản đồ tương quan] */
+const LIVE_GR=[['top','Vốn hóa lớn','Vốn hóa lớn'],['l1','Nền tảng (lớp 1)','Lớp 1'],['defi','Tài chính phi tập trung (DeFi)','DeFi'],['ai','Trí tuệ nhân tạo (AI)','AI'],['meme','Meme','Meme'],['gold','Token vàng','Vàng']];
+const LIVE_SY=[['BTCUSDT','Bitcoin','top'],['ETHUSDT','Ethereum','top'],['BNBUSDT','BNB','top'],['XRPUSDT','XRP','top'],
+ ['SOLUSDT','Solana','l1'],['ADAUSDT','Cardano','l1'],['AVAXUSDT','Avalanche','l1'],['SUIUSDT','Sui','l1'],
+ ['LINKUSDT','Chainlink','defi'],['UNIUSDT','Uniswap','defi'],['AAVEUSDT','Aave','defi'],['LDOUSDT','Lido DAO','defi'],
+ ['FETUSDT','Fetch.ai (ASI)','ai'],['RENDERUSDT','Render','ai'],['TAOUSDT','Bittensor','ai'],['NEARUSDT','NEAR Protocol','ai'],
+ ['DOGEUSDT','Dogecoin','meme'],['SHIBUSDT','Shiba Inu','meme'],['PEPEUSDT','Pepe','meme'],['WIFUSDT','dogwifhat','meme'],
+ ['PAXGUSDT','PAX Gold','gold'],['XAUTUSDT','Tether Gold','gold']];
+/* Tạo danh sách chọn sản phẩm, nhóm theo lĩnh vực; mã ngoài danh sách vào nhóm “Mã khác” */
+function symOpts(extra){const o=s=>`<option value="${s[0]}">${s[0]} · ${s[1]}</option>`,X=extra.filter((s,i)=>s&&extra.indexOf(s)==i&&!LIVE_SY.some(x=>x[0]==s));
+ return LIVE_GR.map(g=>`<optgroup label="${g[1]}">${LIVE_SY.filter(s=>s[2]==g[0]).map(o).join('')}</optgroup>`).join('')+(X.length?`<optgroup label="Mã khác">${X.map(s=>o([s,'mã khác'])).join('')}</optgroup>`:'')}
 const LIVE_TF=[['1m','M1'],['5m','M5'],['15m','M15'],['1h','H1'],['4h','H4'],['1d','D1']];
 let bars=[],S=null,acts=[],di=0,timer=null,saved=[],dataLabel='',curM='';const PM={};
 try{const v=JSON.parse(localStorage.getItem('tl_saved')||'[]');if(Array.isArray(v))saved=v}catch(e){}
@@ -621,8 +636,7 @@ try{const v=JSON.parse(localStorage.getItem('tl_live')||'{}');if(!localStorage.g
 const keep=()=>{try{localStorage.setItem('tl_labsrc',JSON.stringify(B))}catch(e){}};
 let gen=0,extra=null;
 /* Danh sách sản phẩm = danh sách của tab Giá trực tuyến + mã khác đang xem ở tab đó */
-function opts(){const L=LIVE_SY.slice();for(const s of [extra,B.sym])if(s&&!L.some(x=>x[0]==s))L.push([s,'mã khác']);
- $('sym').innerHTML=L.map(s=>`<option value="${s[0]}">${s[0]} · ${s[1]}</option>`).join('');$('sym').value=B.sym}
+function opts(){$('sym').innerHTML=symOpts([extra,B.sym]);$('sym').value=B.sym}
 window.tlLabSyms=s=>{if(s===extra)return;extra=s;opts()};
 function rg(){const d=$('rg').value=='d';$('nW').hidden=d;$('fW').hidden=!d;$('tW').hidden=!d}
 function readB(){B.sym=$('sym').value;B.tf=$('tf').value;B.rg=$('rg').value;B.n=parseFloat($('n').value);B.from=$('from').value;B.to=$('to').value;keep()}
@@ -1006,7 +1020,7 @@ const dp=p=>p>=1000?2:p>=10?3:p>=1?4:6;
 const pf=p=>fmt(p,dp(p));
 
 function ui(){
- const sel=$('lsel');sel.innerHTML=SY.map(s=>`<option value="${s[0]}">${s[0]} · ${s[1]}</option>`).join('')+(SY.some(s=>s[0]==L.sym)?'':`<option value="${L.sym}">${L.sym}</option>`);sel.value=L.sym;
+ const sel=$('lsel');sel.innerHTML=symOpts([L.sym]);sel.value=L.sym;
  $('ltf').innerHTML=TF.map(t=>`<button data-tf="${t[0]}" class="${t[0]==L.tf?'on':''}">${t[1]}</button>`).join('');
  $('lname').textContent=L.sym;$('lrate').value=L.rate||0}
 function stat(t,c){$('lstat').textContent=t;$('ldot').className='ldot '+(c||'')}
@@ -1093,7 +1107,8 @@ $('lctf').innerHTML=TF.map(t=>`<option value="${t[0]}">${t[1]}</option>`).join('
 const keepK=()=>{try{localStorage.setItem('tl_corr',JSON.stringify({tf:K.tf,n:K.n}))}catch(e){}};
 const short=s=>s.replace(/USDT$/,'')||s;
 const f2=v=>(v<0?'−':'')+Math.abs(v).toFixed(2).replace('.',',');
-/* Danh sách = sản phẩm có sẵn + mã khác đang xem */
+const grp=s=>(SY.find(x=>x[0]==s)||[0,0,'x'])[2],grpName=g=>(LIVE_GR.find(x=>x[0]==g)||[0,0,'Mã khác'])[2];
+/* Danh sách = sản phẩm có sẵn (theo lĩnh vực) + mã khác đang xem */
 const corrSyms=()=>{const a=SY.map(s=>s[0]);if(!a.includes(L.sym))a.push(L.sym);return a};
 /* Hệ số tương quan Pearson trên tỷ suất log của giá đóng cửa, ghép theo thời gian mở nến */
 function rets(k){const m=new Map();for(let i=1;i<k.length;i++){const a=k[i-1].c,b=k[i].c;if(a>0&&b>0)m.set(k[i].t,Math.log(b/a))}return m}
@@ -1115,21 +1130,23 @@ async function corr(){const g=++K.gen;K.busy=true;K.done=true;K.sel=null;$('lcer
  const D=new Date(),p=v=>String(v).padStart(2,'0');
  $('lcst').textContent=`Tương quan ${n} sản phẩm · ${K.n} nến ${tfn} gần nhất · cập nhật lúc ${p(D.getHours())}:${p(D.getMinutes())}. Chạm vào một ô để xem chi tiết.`;
  if(bad.length)$('lcerr').textContent='Không lấy được dữ liệu của: '+bad.join(', ')+' (mã không có trên Binance hoặc lỗi mạng), đã bỏ khỏi bản đồ.'}
-function drawM(){const{syms:S2,M,N}=K;if(!M)return;const n=S2.length;
- let h='<tr><th></th>'+S2.map(s=>`<th>${short(s)}</th>`).join('')+'</tr>';
- for(let i=0;i<n;i++){h+=`<tr><th class="r">${short(S2[i])}</th>`;
-  for(let j=0;j<n;j++){const r=M[i][j],on=K.sel&&K.sel[0]==i&&K.sel[1]==j?' on':'';
-   if(i==j){h+=`<td class="self${on}" data-i="${i}" data-j="${j}">1</td>`;continue}
-   if(!isFinite(r)){h+=`<td class="na" title="Không đủ nến chung">–</td>`;continue}
+function drawM(){const{syms:S2,M,N}=K;if(!M)return;const n=S2.length,gs=S2.map(grp),st=i=>i>0&&gs[i]!=gs[i-1],sl=K.sel||[];
+ /* Hàng 1: tên lĩnh vực; hàng 2 (ghim): mã sản phẩm */
+ let h='<tr><th class="r"></th>';for(let i=0;i<n;){let c=1;while(i+c<n&&gs[i+c]==gs[i])c++;h+=`<th class="gh${i?' g':''}" colspan="${c}">${grpName(gs[i])}</th>`;i+=c}
+ h+='</tr><tr class="hs"><th class="r"></th>'+S2.map((s,j)=>`<th class="${st(j)?'g':''}${sl[1]==j?' hl':''}">${short(s)}</th>`).join('')+'</tr>';
+ for(let i=0;i<n;i++){h+=`<tr${st(i)?' class="gt"':''}><th class="r${sl[0]==i?' hl':''}">${short(S2[i])}</th>`;
+  for(let j=0;j<n;j++){const r=M[i][j],on=sl[0]==i&&sl[1]==j?' on':'',g=st(j)?' g':'';
+   if(i==j){h+=`<td class="self${on}${g}" data-i="${i}" data-j="${j}">1</td>`;continue}
+   if(!isFinite(r)){h+=`<td class="na${g}" title="Không đủ nến chung">–</td>`;continue}
    const a=Math.abs(r),al=(.1+.9*a).toFixed(3),bg=r>=0?`rgba(22,163,74,${al})`:`rgba(220,38,38,${al})`;
-   h+=`<td class="${a>=.6?'w':''}${on}" style="background:${bg}" data-i="${i}" data-j="${j}">${f2(r)}</td>`}
+   h+=`<td class="${a>=.6?'w':''}${on}${g}" style="background:${bg}" data-i="${i}" data-j="${j}">${f2(r)}</td>`}
   h+='</tr>'}
  $('lcm').innerHTML=h;$('lcleg').hidden=false}
 $('lcm').onclick=e=>{const td=e.target.closest('td[data-i]');if(!td||!K.M)return;const i=+td.dataset.i,j=+td.dataset.j;
  if(K.sel&&K.sel[0]==i&&K.sel[1]==j){K.sel=null;$('lcinfo').textContent='';drawM();return}
- K.sel=[i,j];drawM();const a=short(K.syms[i]),b=short(K.syms[j]),r=K.M[i][j];
+ K.sel=[i,j];drawM();const a=short(K.syms[i]),b=short(K.syms[j]),r=K.M[i][j],ga=grpName(grp(K.syms[i])),gb=grpName(grp(K.syms[j]));
  $('lcinfo').innerHTML=i==j?`${a} với chính nó luôn là 1 · ${K.N[i][j]} nến có dữ liệu.`
-  :`<b>${a} – ${b}: <span class="${r>=0?'pos':'neg'}">${f2(r)}</span></b> · tương quan ${word(r)} · tính trên ${K.N[i][j]} nến chung.`};
+  :`<b>${a} – ${b}: <span class="${r>=0?'pos':'neg'}">${f2(r)}</span></b> · tương quan ${word(r)} · tính trên ${K.N[i][j]} nến chung · ${ga==gb?'cùng lĩnh vực '+ga:ga+' với '+gb}.`};
 $('lcgo').onclick=corr;
 $('lctf').onchange=()=>{K.tf=$('lctf').value;keepK();corr()};
 $('lcn').onchange=()=>{K.n=+$('lcn').value;keepK();corr()};
