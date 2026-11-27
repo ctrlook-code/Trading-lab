@@ -91,6 +91,15 @@ label.chk{flex-direction:row;align-items:center;gap:10px;margin-top:10px;font-si
 label.chk input{width:22px;height:22px;flex:none;margin:0}
 #tabLoc tr[data-s]{cursor:pointer}#tabLoc tr.fade{opacity:.45}#tabLoc tr.sel td{background:rgba(37,99,235,.13)}
 #tabLoc #f_detB button{flex:1 1 140px}
+/* Bản đồ tương quan (tab Giá trực tuyến) */
+#lcm{border-collapse:separate;border-spacing:2px;width:auto;margin:0 auto;font-size:11.5px;font-variant-numeric:tabular-nums}
+#lcm th{padding:2px 4px;border:0;font-size:11px;color:var(--mu);font-weight:600;text-align:center}
+#lcm th.r{text-align:right;padding-right:6px}
+#lcm td{width:40px;min-width:36px;height:36px;padding:0;border:0;border-radius:5px;text-align:center;font-weight:600;cursor:pointer;color:var(--tx)}
+#lcm td.w{color:#fff}#lcm td.na{background:var(--bg);color:var(--mu);cursor:default}#lcm td.self{background:var(--bg);color:var(--mu)}
+#lcm td.on{outline:2px solid var(--ac);outline-offset:-1px}
+.cleg{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--mu);margin:10px auto 0;max-width:320px}
+.cleg i{flex:1;height:10px;border-radius:5px;background:linear-gradient(90deg,rgb(220,38,38),rgba(127,127,127,.15),rgb(22,163,74))}
 </style>
 </head>
 <body>
@@ -120,6 +129,20 @@ label.chk input{width:22px;height:22px;flex:none;margin:0}
 <label>Tỷ giá quy đổi: 1 USDT = ? VND (để 0 thì không hiện giá VND)<input id="lrate" type="number" step="any" min="0" value="0"></label>
 <div class="row"><button id="luse">Đưa các nến đang xem vào Lab mô phỏng</button></div>
 <p class="cap" style="margin-top:10px">Nguồn giá: dữ liệu thị trường công khai của Binance, chỉ đọc giá, không giao dịch. Giá có thể khác sàn Việt Nam; giá VND chỉ là quy đổi theo tỷ giá bạn nhập. Bản lưu trong claude.ai không lấy được giá trực tuyến, hãy mở bản trên GitHub Pages.</p>
+</section>
+<section class="card">
+<h2>Bản đồ tương quan</h2>
+<p class="cap" style="margin-top:0">Tương quan giữa từng cặp sản phẩm trong danh sách, tính trên mức thay đổi giá đóng cửa từ nến này sang nến kế tiếp. Xanh lá: cùng chiều · đỏ: nghịch chiều · màu càng đậm thì tương quan càng mạnh.</p>
+<div class="grid">
+ <label>Khung nến<select id="lctf"></select></label>
+ <label>Số nến<select id="lcn"><option value="100">100</option><option value="200">200</option><option value="500">500</option><option value="1000">1000</option></select></label>
+</div>
+<div class="row"><button id="lcgo">Tính tương quan</button></div>
+<div class="st" id="lcst">Mở tab này để tính tương quan.</div>
+<div class="sc" style="margin-top:10px"><table id="lcm"></table></div>
+<div class="cleg" id="lcleg" hidden><span>−1 nghịch chiều</span><i></i><span>+1 cùng chiều</span></div>
+<div class="cap" id="lcinfo" style="margin-top:8px;text-align:center"></div>
+<div class="err" id="lcerr"></div>
 </section>
 </div>
 
@@ -1063,10 +1086,58 @@ function drawC(){const cv=$('lc');if($('tabLive').hidden)return;const W=cv.clien
  function idx(e){const r=cv.getBoundingClientRect(),i=Math.floor((e.clientX-r.left)/G.bw)-G.sh;return e.clientX-r.left>G.cw||i<0||i>=G.vis.length?-1:i}}
 function zoom(f){L.view=Math.max(20,Math.min(500,Math.round(L.view*f)));L.cross=-1;paint()}
 
+/* ----- Bản đồ tương quan giữa các sản phẩm trong danh sách ----- */
+const K={tf:'1h',n:500,done:false,busy:false,gen:0,syms:[],M:null,N:null,sel:null};
+try{const v=JSON.parse(localStorage.getItem('tl_corr')||'{}');if(TF.some(t=>t[0]==v.tf))K.tf=v.tf;if([100,200,500,1000].includes(+v.n))K.n=+v.n}catch(e){}
+$('lctf').innerHTML=TF.map(t=>`<option value="${t[0]}">${t[1]}</option>`).join('');$('lctf').value=K.tf;$('lcn').value=K.n;
+const keepK=()=>{try{localStorage.setItem('tl_corr',JSON.stringify({tf:K.tf,n:K.n}))}catch(e){}};
+const short=s=>s.replace(/USDT$/,'')||s;
+const f2=v=>(v<0?'−':'')+Math.abs(v).toFixed(2).replace('.',',');
+/* Danh sách = sản phẩm có sẵn + mã khác đang xem */
+const corrSyms=()=>{const a=SY.map(s=>s[0]);if(!a.includes(L.sym))a.push(L.sym);return a};
+/* Hệ số tương quan Pearson trên tỷ suất log của giá đóng cửa, ghép theo thời gian mở nến */
+function rets(k){const m=new Map();for(let i=1;i<k.length;i++){const a=k[i-1].c,b=k[i].c;if(a>0&&b>0)m.set(k[i].t,Math.log(b/a))}return m}
+function pear(A,B){let n=0,sx=0,sy=0,sxx=0,syy=0,sxy=0;const[P,Q]=A.size<=B.size?[A,B]:[B,A];
+ for(const[t,x]of P){const y=Q.get(t);if(y===undefined)continue;n++;sx+=x;sy+=y;sxx+=x*x;syy+=y*y;sxy+=x*y}
+ if(n<10)return[NaN,n];const vx=sxx-sx*sx/n,vy=syy-sy*sy/n;if(vx<=0||vy<=0)return[NaN,n];
+ return[Math.max(-1,Math.min(1,(sxy-sx*sy/n)/Math.sqrt(vx*vy))),n]}
+function word(r){const a=Math.abs(r);return(a>=.7?'mạnh':a>=.4?'vừa':a>=.2?'yếu':'gần như không có')+(a>=.2?(r>0?', cùng chiều':', nghịch chiều'):'')}
+async function corr(){const g=++K.gen;K.busy=true;K.done=true;K.sel=null;$('lcerr').textContent='';$('lcinfo').textContent='';
+ const syms=corrSyms(),tfn=(TF.find(t=>t[0]==K.tf)||[0,K.tf])[1];$('lcst').textContent=`Đang tải ${K.n} nến ${tfn} của ${syms.length} sản phẩm…`;$('lcgo').disabled=true;
+ const res=await Promise.all(syms.map(s=>getJ(`/api/v3/klines?symbol=${s}&interval=${K.tf}&limit=${K.n}`).then(k=>k.map(r=>({t:r[0],c:+r[4]})),e=>null)));
+ if(g!==K.gen)return;K.busy=false;$('lcgo').disabled=false;
+ const ok=[],R=[],bad=[];syms.forEach((s,i)=>{if(res[i]&&res[i].length>11){ok.push(s);R.push(rets(res[i]))}else bad.push(s)});
+ if(ok.length<2){K.M=null;$('lcm').innerHTML='';$('lcleg').hidden=true;$('lcst').textContent='Không tính được tương quan.';
+  $('lcerr').textContent='Không lấy được đủ dữ liệu từ Binance. Nếu bạn đang mở bản lưu trong claude.ai thì bản này không được phép kết nối ra ngoài, hãy mở bản trên GitHub Pages; nếu không, hãy kiểm tra mạng.';K.done=false;return}
+ const n=ok.length,M=[],N=[];for(let i=0;i<n;i++){M.push([]);N.push([])}
+ for(let i=0;i<n;i++){M[i][i]=1;N[i][i]=R[i].size;for(let j=i+1;j<n;j++){const[r,c]=pear(R[i],R[j]);M[i][j]=M[j][i]=r;N[i][j]=N[j][i]=c}}
+ K.syms=ok;K.M=M;K.N=N;drawM();
+ const D=new Date(),p=v=>String(v).padStart(2,'0');
+ $('lcst').textContent=`Tương quan ${n} sản phẩm · ${K.n} nến ${tfn} gần nhất · cập nhật lúc ${p(D.getHours())}:${p(D.getMinutes())}. Chạm vào một ô để xem chi tiết.`;
+ if(bad.length)$('lcerr').textContent='Không lấy được dữ liệu của: '+bad.join(', ')+' (mã không có trên Binance hoặc lỗi mạng), đã bỏ khỏi bản đồ.'}
+function drawM(){const{syms:S2,M,N}=K;if(!M)return;const n=S2.length;
+ let h='<tr><th></th>'+S2.map(s=>`<th>${short(s)}</th>`).join('')+'</tr>';
+ for(let i=0;i<n;i++){h+=`<tr><th class="r">${short(S2[i])}</th>`;
+  for(let j=0;j<n;j++){const r=M[i][j],on=K.sel&&K.sel[0]==i&&K.sel[1]==j?' on':'';
+   if(i==j){h+=`<td class="self${on}" data-i="${i}" data-j="${j}">1</td>`;continue}
+   if(!isFinite(r)){h+=`<td class="na" title="Không đủ nến chung">–</td>`;continue}
+   const a=Math.abs(r),al=(.1+.9*a).toFixed(3),bg=r>=0?`rgba(22,163,74,${al})`:`rgba(220,38,38,${al})`;
+   h+=`<td class="${a>=.6?'w':''}${on}" style="background:${bg}" data-i="${i}" data-j="${j}">${f2(r)}</td>`}
+  h+='</tr>'}
+ $('lcm').innerHTML=h;$('lcleg').hidden=false}
+$('lcm').onclick=e=>{const td=e.target.closest('td[data-i]');if(!td||!K.M)return;const i=+td.dataset.i,j=+td.dataset.j;
+ if(K.sel&&K.sel[0]==i&&K.sel[1]==j){K.sel=null;$('lcinfo').textContent='';drawM();return}
+ K.sel=[i,j];drawM();const a=short(K.syms[i]),b=short(K.syms[j]),r=K.M[i][j];
+ $('lcinfo').innerHTML=i==j?`${a} với chính nó luôn là 1 · ${K.N[i][j]} nến có dữ liệu.`
+  :`<b>${a} – ${b}: <span class="${r>=0?'pos':'neg'}">${f2(r)}</span></b> · tương quan ${word(r)} · tính trên ${K.N[i][j]} nến chung.`};
+$('lcgo').onclick=corr;
+$('lctf').onchange=()=>{K.tf=$('lctf').value;keepK();corr()};
+$('lcn').onchange=()=>{K.n=+$('lcn').value;keepK();corr()};
+
 /* ----- Nút và chuyển tab ----- */
 $('ltf').onclick=e=>{const b=e.target.closest('button');if(!b||b.dataset.tf==L.tf)return;L.tf=b.dataset.tf;keep();load()};
 $('lsel').onchange=()=>{L.sym=$('lsel').value;keep();load()};
-const go=()=>{const v=$('lcus').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');if(!/^[A-Z0-9]{5,20}$/.test(v)){$('lerr').textContent='Mã không hợp lệ. Ví dụ: ADAUSDT, DOGEUSDT.';return}L.sym=v;$('lcus').value='';keep();load()};
+const go=()=>{const v=$('lcus').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');if(!/^[A-Z0-9]{5,20}$/.test(v)){$('lerr').textContent='Mã không hợp lệ. Ví dụ: ADAUSDT, DOGEUSDT.';return}L.sym=v;$('lcus').value='';keep();load();if(K.M&&!K.busy&&!K.syms.includes(v))corr()};
 $('lgo').onclick=go;$('lcus').onkeydown=e=>{if(e.key==='Enter')go()};
 $('lzi').onclick=()=>zoom(1/1.4);$('lzo').onclick=()=>zoom(1.4);$('lnow').onclick=()=>{L.off=0;L.cross=-1;paint()};
 $('lrate').oninput=()=>{const v=parseFloat($('lrate').value);L.rate=v>0?v:0;keep();vnd()};
@@ -1079,7 +1150,7 @@ $('luse').onclick=()=>{if(!L.c.length){$('lerr').textContent='Chưa có nến n�
 function show(t){if(!['lab','gop','loc','gia'].includes(t))t='lab';const live=t==='gia';
  [['lab','tabLab','tbLab'],['gop','tabGop','tbGop'],['loc','tabLoc','tbLoc'],['gia','tabLive','tbLive']].forEach(([k,p,b])=>{$(p).hidden=k!==t;$(b).classList.toggle('on',k===t)});
  try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t)}catch(e){}
- if(live){if(!L.started){L.started=true;load()}else{if(!L.ws&&!L.rt)conn(L.gen,0);paint()}}else if(t==='lab'){if(window.tlLabSyms)window.tlLabSyms(L.sym);if(S)charts()}}
+ if(live){if(!K.done&&!K.busy)corr();if(!L.started){L.started=true;load()}else{if(!L.ws&&!L.rt)conn(L.gen,0);paint()}}else if(t==='lab'){if(window.tlLabSyms)window.tlLabSyms(L.sym);if(S)charts()}}
 window.tlShow=show;
 $('tbLab').onclick=()=>show('lab');$('tbGop').onclick=()=>show('gop');$('tbLoc').onclick=()=>show('loc');$('tbLive').onclick=()=>show('gia');
 addEventListener('hashchange',()=>show(location.hash.slice(1)));
