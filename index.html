@@ -108,13 +108,93 @@ label.chk input{width:22px;height:22px;flex:none;margin:0}
 #lcm td.on{outline:2px solid var(--ac);outline-offset:-1px}
 .cleg{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--mu);margin:10px auto 0;max-width:320px}
 .cleg i{flex:1;height:10px;border-radius:5px;background:linear-gradient(90deg,rgb(220,38,38),rgba(127,127,127,.15),rgb(22,163,74))}
+/* Robot nhắc lệnh */
+#tabBot .rule{border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--bg)}
+#tabBot .rule.off{opacity:.55}
+#tabBot .rule b{display:block}#tabBot .rule .cap{margin:2px 0 0}
+#tabBot .rule .row{margin-top:8px}#tabBot .rule .row button{flex:1 1 90px;padding:7px 10px}
+#tabBot .lg{border-bottom:1px solid var(--bd);padding:8px 2px;font-size:13px}
+#tabBot .lg time{color:var(--mu);font-size:12px;margin-right:6px}#tabBot .lg div{white-space:pre-line;margin-top:2px}
+#tabBot .lg button{margin-top:6px;padding:6px 10px}
+#botT{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:30;max-width:560px;max-height:60vh;overflow-y:auto;margin:0 auto;padding:12px;background:var(--card);color:var(--tx);border:2px solid var(--wn);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.25);font-size:14px}
+#botT b{display:block;margin-bottom:4px}#botT div{white-space:pre-line}#botT .row{margin-top:10px}#botT .row button{flex:1 1 100px;padding:8px 10px}
+.tab .bd{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--up);margin-left:4px;vertical-align:1px}
+@media (max-width:440px){.tab{font-size:12px;padding:6px 2px}}
 </style>
 </head>
 <body>
 <main>
 <h1>Trading Lab</h1>
-<p class="sub">Mô phỏng phương pháp, trợ lý đặt lệnh trên sàn gộp lệnh, lọc sản phẩm theo phương pháp và giá trực tuyến.</p>
-<nav class="tabs"><button class="tab on" id="tbLab">Lab mô phỏng</button><button class="tab" id="tbGop">Trợ lý gộp lệnh</button><button class="tab" id="tbLoc">Lọc sản phẩm</button><button class="tab" id="tbLive">Giá trực tuyến</button></nav>
+<p class="sub">Mô phỏng phương pháp, trợ lý đặt lệnh trên sàn gộp lệnh, lọc sản phẩm theo phương pháp, giá trực tuyến và robot nhắc lệnh.</p>
+<nav class="tabs"><button class="tab on" id="tbLab">Lab mô phỏng</button><button class="tab" id="tbGop">Trợ lý gộp lệnh</button><button class="tab" id="tbLoc">Lọc sản phẩm</button><button class="tab" id="tbLive">Giá trực tuyến</button><button class="tab" id="tbBot">Robot nhắc lệnh</button></nav>
+
+<div id="tabBot" hidden>
+<p class="sub">Robot theo dõi giá Binance trực tiếp và nhắc bạn khi giá chạm mắc cần đặt lệnh. Robot chỉ nhắc, không tự đặt lệnh, không tự sửa sổ.</p>
+
+<section class="card">
+<h2>1. Robot</h2>
+<div class="st" id="b_stat" style="margin-top:0"><span class="ldot" id="b_dot"></span><span id="b_statT">Robot đang tắt</span></div>
+<div class="row"><button id="b_on">▶ Bật robot</button><button class="s" id="b_test">🔔 Thử nhắc</button></div>
+<label class="chk"><input type="checkbox" id="b_snd" checked>Phát âm thanh khi nhắc</label>
+<label class="chk"><input type="checkbox" id="b_wake" checked>Giữ màn hình sáng khi robot chạy</label>
+<label class="chk"><input type="checkbox" id="b_ntf">Hiện thông báo của hệ thống (nếu máy hỗ trợ)</label>
+<div class="grid" style="margin-top:10px"><label>Nhắc lại lệnh theo sổ nếu chưa xác nhận<select id="b_rep"><option value="0">Không nhắc lại</option><option value="5">Sau 5 phút</option><option value="15">Sau 15 phút</option><option value="30">Sau 30 phút</option><option value="60">Sau 60 phút</option></select></label></div>
+<p class="cap" style="margin-top:10px">Robot chỉ chạy khi app đang mở trên màn hình. iPhone khóa màn hình hoặc chuyển sang app khác thì robot tạm dừng; mở lại app, robot tự kết nối lại và xem lại các nến 1 phút đã bỏ lỡ để nhắc bù. Muốn robot chạy liên tục: cắm sạc, bật “Giữ màn hình sáng” và để app mở. Âm thanh trên iPhone bị tắt khi bật chế độ im lặng.</p>
+<div class="err" id="b_err0"></div>
+</section>
+
+<section class="card">
+<h2>2. Lệnh cần nhắc</h2>
+<div id="b_rules"></div>
+<h2 style="margin-top:16px">Thêm nhắc</h2>
+<label>Loại nhắc<select id="b_typ"><option value="book">Theo sổ Trợ lý gộp lệnh (mua/bán theo phương pháp)</option><option value="grid">Giá chạm mắc lưới</option><option value="px">Giá chạm mức</option></select></label>
+<p class="cap" id="b_typInfo" style="margin-top:6px"></p>
+<div class="grid">
+ <label id="b_bkW">Sổ<select id="b_bk"></select></label>
+ <label>Mã sản phẩm trên Binance<input id="b_sym" placeholder="Ví dụ BTCUSDT" autocapitalize="characters" autocomplete="off" list="b_syms"></label>
+ <label id="b_aW">Giá khởi tạo (mắc 0)<input id="b_a" type="number" step="any" inputmode="decimal"></label>
+ <label id="b_stW">Khoảng cách lưới (% của giá khởi tạo)<input id="b_st" type="number" step="any" inputmode="decimal" value="1"></label>
+ <label id="b_dirW">Điều kiện<select id="b_dir"><option value="1">Giá lên tới hoặc cao hơn</option><option value="-1">Giá xuống tới hoặc thấp hơn</option></select></label>
+ <label id="b_xW">Mức giá<input id="b_x" type="number" step="any" inputmode="decimal"></label>
+ <label id="b_rpW">Sau khi nhắc<select id="b_rp"><option value="0">Tắt nhắc này</option><option value="1">Giữ lại, nhắc lần sau khi giá quay lại chạm mức</option></select></label>
+</div>
+<datalist id="b_syms"></datalist>
+<div class="row"><button id="b_add">+ Thêm nhắc</button><button class="s" id="b_px0">Lấy giá hiện tại</button></div>
+<div class="err" id="b_err1"></div>
+</section>
+
+<section class="card">
+<h2>3. Gửi nhắc qua Telegram (tùy chọn)</h2>
+<p class="cap">Nhắc sẽ đến Telegram trên điện thoại kể cả khi bạn đang xem app khác, miễn là máy chạy robot còn mở app. Sau này chuyển robot lên VPS vẫn dùng lại đúng bot này.</p>
+<ul style="margin-bottom:10px"><li>Trong Telegram, mở <b>@BotFather</b>, gõ <b>/newbot</b>, đặt tên, rồi sao chép mã bot (token) dán vào ô dưới.</li><li>Mở bot vừa tạo, bấm <b>Start</b> và gửi cho bot một tin bất kỳ.</li><li>Bấm “Tìm chat ID”, rồi “Gửi thử”.</li></ul>
+<div class="grid">
+ <label>Mã bot (token)<input id="b_tk" placeholder="123456:ABC…" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+ <label>Chat ID<input id="b_chat" placeholder="Ví dụ 123456789" autocomplete="off" inputmode="numeric"></label>
+</div>
+<label class="chk"><input type="checkbox" id="b_tgOn">Gửi mọi lần nhắc qua Telegram</label>
+<div class="row"><button class="s" id="b_tgId">Tìm chat ID</button><button class="s" id="b_tgT">Gửi thử</button></div>
+<div class="st" id="b_tgS" hidden></div>
+<p class="cap" style="margin-top:10px">Mã bot chỉ lưu trong trình duyệt của máy này. Ai có mã bot thì gửi được tin qua bot của bạn, đừng chia sẻ mã này.</p>
+</section>
+
+<section class="card">
+<h2>4. Nhật ký nhắc</h2>
+<div class="row" style="margin-top:0;margin-bottom:8px"><button class="s" id="b_clr">Xóa nhật ký</button></div>
+<div id="b_log"></div>
+</section>
+
+<section class="card">
+<h2>Giả định</h2>
+<ul>
+<li>Giá lấy từ dữ liệu thị trường công khai của Binance (nến 1 phút), chỉ đọc, không giao dịch. Giá có thể khác sàn bạn đặt lệnh.</li>
+<li>“Chạm mức” tính theo giá cao nhất, thấp nhất và giá khớp gần nhất của nến 1 phút, cập nhật khoảng 2 giây một lần.</li>
+<li>Nhắc theo sổ dùng đúng sổ lệnh ảo và phương pháp ở tab Trợ lý gộp lệnh: robot tìm mắc gần nhất phía trên và phía dưới mà phương pháp có lệnh, chạm tới là nhắc kèm số lượng cần mua/bán. Robot không sửa sổ; bạn đặt lệnh trên sàn rồi xác nhận khớp ở tab Trợ lý gộp lệnh, robot sẽ tự tính mắc mới.</li>
+<li>Giá đi tiếp qua thêm mắc thì robot nhắc lại với số lượng mới. Giá quay về rồi chạm lại cùng mắc thì không nhắc trùng (trừ khi bật nhắc lại theo thời gian).</li>
+<li>Khi robot tạm dừng (khóa màn hình, mất mạng), lúc chạy lại robot xem tối đa 1000 nến 1 phút gần nhất để nhắc bù.</li>
+<li>Không tính phí, thuế. Không phải lời khuyên tài chính. Bản lưu trong claude.ai không lấy được giá, hãy mở bản trên GitHub Pages.</li>
+</ul>
+</section>
+</div>
 
 <div id="tabLive" hidden>
 <section class="card">
@@ -861,6 +941,9 @@ $('csvB').onclick=()=>{const b=B();if(!b)return;const q=v=>{v=String(v??'');retu
 if(DB.cur&&!DB.books[DB.cur])DB.cur=Object.keys(DB.books)[0]||null;
 if(B())$('px').value=B().px;
 renderForm();renderBooks();
+/* Cho tab Robot nhắc lệnh đọc sổ (chỉ đọc) và mở sổ để tính lệnh */
+window.tlGop={books:()=>DB.books,plan,lq,acct,rnd,name:m=>MS[m].name,
+ open(id,y){if(!DB.books[id])return;DB.cur=id;P=null;save();renderBooks();if(window.tlShow)window.tlShow('gop');if(y>0){$('px').value=cln(y);calc(y)}$('todo').scrollIntoView({behavior:'smooth',block:'center'})}};
 })();
 </script>
 
@@ -1167,12 +1250,13 @@ $('luse').onclick=()=>{if(!L.c.length){$('lerr').textContent='Chưa có nến n�
  $('mode').value='auto';$('mode').onchange();show('lab');
  $('stat').textContent='Đã nạp '+B.length+' nến '+L.sym+' khung '+(TF.find(t=>t[0]==L.tf)||[0,L.tf])[1]+' từ tab Giá trực tuyến. Chọn phương pháp rồi bấm “Đặt lại với thông số này”.';
  scrollTo({top:0})};
-function show(t){if(!['lab','gop','loc','gia'].includes(t))t='lab';const live=t==='gia';
- [['lab','tabLab','tbLab'],['gop','tabGop','tbGop'],['loc','tabLoc','tbLoc'],['gia','tabLive','tbLive']].forEach(([k,p,b])=>{$(p).hidden=k!==t;$(b).classList.toggle('on',k===t)});
+function show(t){if(!['lab','gop','loc','gia','bot'].includes(t))t='lab';const live=t==='gia';
+ [['lab','tabLab','tbLab'],['gop','tabGop','tbGop'],['loc','tabLoc','tbLoc'],['gia','tabLive','tbLive'],['bot','tabBot','tbBot']].forEach(([k,p,b])=>{$(p).hidden=k!==t;$(b).classList.toggle('on',k===t)});
  try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t)}catch(e){}
- if(live){if(!K.done&&!K.busy)corr();if(!L.started){L.started=true;load()}else{if(!L.ws&&!L.rt)conn(L.gen,0);paint()}}else if(t==='lab'){if(window.tlLabSyms)window.tlLabSyms(L.sym);if(S)charts()}}
+ if(live){if(!K.done&&!K.busy)corr();if(!L.started){L.started=true;load()}else{if(!L.ws&&!L.rt)conn(L.gen,0);paint()}}else if(t==='lab'){if(window.tlLabSyms)window.tlLabSyms(L.sym);if(S)charts()}
+ if(window.tlBotView)window.tlBotView(t==='bot')}
 window.tlShow=show;
-$('tbLab').onclick=()=>show('lab');$('tbGop').onclick=()=>show('gop');$('tbLoc').onclick=()=>show('loc');$('tbLive').onclick=()=>show('gia');
+$('tbLab').onclick=()=>show('lab');$('tbGop').onclick=()=>show('gop');$('tbLoc').onclick=()=>show('loc');$('tbLive').onclick=()=>show('gia');$('tbBot').onclick=()=>show('bot');
 addEventListener('hashchange',()=>show(location.hash.slice(1)));
 addEventListener('resize',paint);
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',paint);
@@ -1182,10 +1266,261 @@ ui();show(location.hash.slice(1));
 </script>
 
 <script>
+/* ===== Tab Robot nhắc lệnh: theo dõi giá Binance trực tiếp (nến 1 phút) và nhắc khi giá chạm mắc cần đặt lệnh.
+   Robot chỉ nhắc: không đặt lệnh, không sửa sổ của Trợ lý gộp lệnh. ===== */
+(()=>{
+const REST=['https://data-api.binance.vision','https://api.binance.com'];
+const WSS=['wss://data-stream.binance.vision','wss://stream.binance.com:9443'];
+const E=1e-9,MIN=6e4,MAXLV=60;
+const NET='Không lấy được giá. Nếu bạn đang mở bản lưu trong claude.ai thì bản này không được phép kết nối ra ngoài, hãy mở bản trên GitHub Pages. Nếu không, hãy kiểm tra mạng.';
+const $b=id=>document.getElementById('b_'+id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dp=p=>p>=1000?2:p>=10?3:p>=1?4:6,pf=p=>p>0?fmt(p,dp(p)):'–';
+const pc=(y,x)=>{const v=(y/x-1)*100;return(v>0?'+':'')+fmt(v,2)+'%'};
+const p2=v=>String(v).padStart(2,'0');
+const hm=t=>{const d=new Date(t);return p2(d.getHours())+':'+p2(d.getMinutes())};
+const dt=t=>{const d=new Date(t);return p2(d.getDate())+'/'+p2(d.getMonth()+1)+' '+hm(t)};
+const hms=t=>hm(t)+':'+p2(new Date(t).getSeconds());
+/* Mã ngắn để biết sổ đã đổi (sau khi bạn xác nhận khớp ở tab Trợ lý gộp lệnh) */
+const hash=s=>{let h=5381;for(let i=0;i<s.length;i++)h=(h*33^s.charCodeAt(i))>>>0;return h.toString(36)+s.length};
+
+/* ===== Dữ liệu lưu trong trình duyệt: cài đặt, các nhắc, nhật ký, nến đã xem tới đâu ===== */
+let C={on:false,snd:true,wake:true,ntf:false,rep:15,tg:{tk:'',chat:'',on:false},rules:[],log:[],seen:{}};
+try{const v=JSON.parse(localStorage.getItem('tl_bot')||'null');if(v&&Array.isArray(v.rules))C={...C,...v,tg:{...C.tg,...(v.tg||{})},seen:v.seen||{},log:v.log||[]}}catch(e){}
+let svT=0;const save=()=>{clearTimeout(svT);svT=setTimeout(()=>{try{localStorage.setItem('tl_bot',JSON.stringify(C))}catch(e){}},300)};
+/* Trạng thái lúc chạy (không lưu) */
+const R={ws:null,gen:0,rt:0,retry:0,syms:'',px:{},pt:{},kl:{},last:0,ok:false,msg:'',wl:null,ac:null,view:false,T:new Map(),tq:Promise.resolve(),tgErr:'',rr:0,del:null};
+const syms=()=>[...new Set(C.rules.filter(r=>r.on).map(r=>r.sym))].sort();
+async function getJ(path){let e;for(const b of REST){try{const r=await fetch(b+path,{cache:'no-store'});if(!r.ok){const j=await r.json().catch(()=>null);const x=Error(j&&j.msg||('HTTP '+r.status));x.code=r.status;throw x}return await r.json()}catch(x){e=x;if(x.code==400)break}}throw e}
+
+/* ===== Nhắc theo sổ Trợ lý gộp lệnh =====
+   Tìm mắc gần nhất phía trên và phía dưới giá của sổ mà phương pháp có lệnh (mua, bán hoặc cắt).
+   Giá chạm mắc đó thì tính kế hoạch bằng đúng hàm của Trợ lý gộp lệnh và nhắc số lượng cần đặt. */
+function bookOf(r){const G=window.tlGop;return G&&G.books()[r.book]}
+function trig(r,b){const G=window.tlGop,key=hash(JSON.stringify(b.S)+'|'+b.fills.length);
+ if(r.k!==key){r.k=key;r.kt=Date.now();r.sig=null;r.at=0;r.msg='';save()}
+ const c=R.T.get(r.id);if(c&&c.key===key)return c;
+ const a=b.a,st=b.st,k0=(b.S.x-a)/st,T={key,up:null,dn:null,ku:null,kd:null};
+ for(let i=1;i<=MAXLV&&T.up==null;i++){const k=Math.floor(k0+E)+i,y=a+k*st;let p;try{p=G.plan(b,y)}catch(e){break}if(p.acts.length){T.up=y;T.ku=k}}
+ for(let i=1;i<=MAXLV&&T.dn==null;i++){const k=Math.ceil(k0-E)-i,y=a+k*st;if(!(y>0))break;let p;try{p=G.plan(b,y)}catch(e){break}if(p.acts.length){T.dn=y;T.kd=k}}
+ R.T.set(r.id,T);return T}
+function evBook(r,P,cu){const G=window.tlGop,b=bookOf(r);if(!b){r.err='Không còn sổ này trong Trợ lý gộp lệnh.';return}r.err='';
+ const T=trig(r,b),Q=P.filter(x=>x.t>=(r.kt||0));if(!Q.length)return;
+ let lo=Infinity,hi=-Infinity;for(const x of Q){if(x.p<lo)lo=x.p;if(x.p>hi)hi=x.p}
+ /* Chiều xuống xét giá thấp nhất, chiều lên xét giá cao nhất */
+ const C2=[];if(T.kd!=null&&Math.ceil((lo-b.a)/b.st-E)<=T.kd)C2.push(lo);if(T.ku!=null&&Math.floor((hi-b.a)/b.st+E)>=T.ku)C2.push(hi);
+ for(const y of C2){
+  let pl;try{pl=G.plan(b,y)}catch(e){r.err=e.message;continue}if(!pl.acts.length)continue;
+  const L=pl.acts[pl.acts.length-1],sig=L.k+'|'+pl.acts.length;if(r.sig===sig)continue;
+  const q=G.rnd(b,G.lq({...b,S:pl.s})-G.acct(b).pos);
+  const title=b.name+': '+(q>0?'MUA '+fmt(q,8):q<0?'BÁN '+fmt(-q,8):'cập nhật sổ');
+  const body=`${r.sym} ${y<b.S.x?'xuống':'lên'} chạm mắc ${L.k} · giá ${pf(L.x)}\nSổ ảo: ${pl.acts.map(a=>a.t+' mắc '+a.k).join('; ')}\n`+
+   (q?`Lệnh trên sàn: ${q>0?'MUA':'BÁN'} ${fmt(Math.abs(q),8)} · giá tham khảo ${pf(L.x)}\nĐặt lệnh xong, xác nhận khớp ở tab Trợ lý gộp lệnh.`:'Mua và bán trong sổ ảo bù trừ nhau, trên sàn không cần đặt lệnh. Vào tab Trợ lý gộp lệnh để xác nhận cập nhật sổ.');
+  r.sig=sig;r.at=r.at0=Date.now();r.msg=title+'\n'+body;r.y=y;save();
+  notify({r,title,body,book:r.book,y,cu})}}
+
+/* ===== Nhắc khi giá chạm mắc lưới (không cần sổ) ===== */
+function evGrid(r,P,cu){const st=r.a*r.step/100,hit=[];let n=0;
+ const push=(j,d)=>{n++;if(hit.length<40)hit.push([j,d]);else hit[hit.length-1]=[j,d]};
+ for(const {p} of P){const k=(p-r.a)/st;
+  if(r.u==null){r.u=Math.floor(k+E)+1;r.d=Math.ceil(k-E)-1;save();continue}
+  if(k>=r.u-E){const K=Math.floor(k+E);for(let j=Math.max(r.u,K-200);j<=K;j++)push(j,1);r.u=K+1;r.d=K-1}
+  else if(k<=r.d+E){const K=Math.ceil(k-E);for(let j=Math.min(r.d,K+200);j>=K;j--)push(j,-1);r.d=K-1;r.u=K+1}}
+ if(!n)return;save();const L=hit[hit.length-1];
+ notify({r,title:`${r.sym} ${L[1]>0?'lên':'xuống'} chạm mắc lưới ${L[0]}`,cu,
+  body:hit.map(([j,d])=>`${d>0?'▲ Lên':'▼ Xuống'} chạm mắc ${j} · giá ${pf(r.a+j*st)}`).join('\n')+(n>hit.length?`\n(tổng cộng ${n} lần chạm mắc)`:'')})}
+
+/* ===== Nhắc khi giá chạm một mức ===== */
+function evPx(r,P,cu){for(const {p} of P){
+ if(r.armed===false){if(r.dir>0?p<r.x*(1-0.002):p>r.x*(1+0.002))r.armed=true;continue}
+ if(r.dir>0?p>=r.x:p<=r.x){r.armed=false;if(!r.rep)r.on=false;save();
+  notify({r,title:`${r.sym} ${r.dir>0?'lên tới':'xuống tới'} ${pf(r.x)}`,body:`Giá ${pf(p)} đã ${r.dir>0?'lên tới hoặc cao hơn':'xuống tới hoặc thấp hơn'} mức ${pf(r.x)}.`+(r.rep?'\nRobot sẽ nhắc lại khi giá quay lại chạm mức này.':'\nNhắc này đã tự tắt.'),cu});break}}}
+const EV={book:evBook,grid:evGrid,px:evPx};
+
+/* Đưa các điểm giá mới của một sản phẩm qua mọi nhắc đang bật. cu: lúc bắt đầu khoảng bị bỏ lỡ (nhắc bù) */
+function feed(sym,pts,cu){if(!pts.length)return;R.px[sym]=pts[pts.length-1].p;R.pt[sym]=Date.now();
+ for(const r of C.rules){if(!r.on||r.sym!==sym)continue;const P=pts.filter(x=>x.t>=(r.since||0));if(!P.length)continue;
+  try{EV[r.t](r,P,cu)}catch(e){r.err=e.message}}
+ if(syms().join(',')!==R.syms)setTimeout(connect,0);
+ if(R.view)lazyRules()}
+
+/* ===== Kết nối giá ===== */
+function close(){clearTimeout(R.rt);R.rt=0;R.ok=false;if(R.ws){const w=R.ws;R.ws=null;w.onclose=w.onerror=w.onmessage=null;try{w.close()}catch(e){}}}
+async function connect(){const g=++R.gen;close();R.busy=false;const S=syms();R.syms=S.join(',');R.msg='';
+ if(!C.on||document.hidden){status();return}
+ if(!S.length){status();return}
+ status('Đang kiểm tra giá…','warn');R.busy=true;
+ try{await catchup(S,g)}finally{if(g===R.gen)R.busy=false}if(g!==R.gen)return;
+ open(g,0)}
+/* Xem lại nến 1 phút trong lúc robot tạm dừng để nhắc bù (tối đa 1000 nến gần nhất) */
+async function catchup(S,g){const now=Date.now();
+ await Promise.all(S.map(async sym=>{const seen=C.seen[sym],st=seen?Math.max(seen,now-1000*MIN):0,z0=R.kl[sym];
+  try{const k=await getJ(`/api/v3/klines?symbol=${sym}&interval=1m&`+(st?`startTime=${st}&limit=1000`:'limit=1'));if(g!==R.gen||!k.length)return;
+   const B=k.map(x=>({t:x[0],o:+x[1],h:+x[2],l:+x[3],c:+x[4]})),z=B[B.length-1],pts=[];
+   if(!st)pts.push({p:z.c,t:now});
+   /* Nến đã xem một phần thì chỉ lấy phần giá mới vượt cao/thấp đã biết, để không nhắc trùng */
+   else for(const b of B){const t=b.t+MIN-1;if(z0&&b.t<z0.t)continue;
+    if(z0&&b.t===z0.t){if(b.h>z0.h)pts.push({p:b.h,t});if(b.l<z0.l)pts.push({p:b.l,t});pts.push({p:b.c,t})}
+    else for(const p of b.c>=b.o?[b.o,b.l,b.h,b.c]:[b.o,b.h,b.l,b.c])pts.push({p,t})}
+   R.kl[sym]={t:z.t,h:z.h,l:z.l};C.seen[sym]=z.t;feed(sym,pts,st&&now-seen>2*MIN?seen:0)}
+  catch(e){if(g===R.gen)R.msg=e.code==400?'Mã '+sym+' không có trên Binance.':NET}}));
+ save()}
+function open(g,i){if(g!==R.gen||!C.on||document.hidden)return;const S=R.syms.split(',').filter(Boolean);if(!S.length)return;
+ const u=`${WSS[i%WSS.length]}/stream?streams=${S.map(s=>s.toLowerCase()+'@kline_1m').join('/')}`;let ws,ok=false;
+ try{ws=new WebSocket(u)}catch(e){again(g,i+1);return}
+ R.ws=ws;R.last=Date.now();
+ ws.onopen=()=>{ok=true;R.ok=true;R.retry=0;R.last=Date.now();R.msg='';status()};
+ ws.onmessage=ev=>{if(g!==R.gen)return;let m;try{m=JSON.parse(ev.data)}catch(e){return}const d=m.data||m;if(d.e!=='kline')return;R.last=Date.now();
+  const k=d.k,sym=d.s,b={t:k.t,o:+k.o,h:+k.h,l:+k.l,c:+k.c},z=R.kl[sym],P=[];if(!(b.c>0))return;
+  if(!z||b.t>z.t)P.push(...(b.c>=b.o?[b.l,b.h]:[b.h,b.l]));
+  else if(b.t===z.t){if(b.h>z.h)P.push(b.h);if(b.l<z.l)P.push(b.l)}
+  else return;
+  P.push(b.c);R.kl[sym]={t:b.t,h:b.h,l:b.l};C.seen[sym]=b.t;const t=Date.now();feed(sym,P.map(p=>({p,t})));if(R.view)lazyStat()};
+ ws.onerror=()=>{try{ws.close()}catch(e){}};
+ ws.onclose=()=>{if(g!==R.gen||R.ws!==ws)return;R.ws=null;R.ok=false;status('Mất kết nối giá, đang kết nối lại…','warn');again(g,ok?i:i+1)}}
+function again(g,i){clearTimeout(R.rt);const w=Math.min(30000,1000*2**R.retry++);R.rt=setTimeout(()=>{if(g===R.gen)open(g,i)},w)}
+
+/* ===== Báo nhắc: trên màn hình, âm thanh, thông báo hệ thống, Telegram ===== */
+function notify(o){const ts=Date.now(),title=(o.cu?'Nhắc bù · ':'')+o.title,body=(o.cu?`Giá đã chạm trong lúc robot tạm dừng (từ ${dt(o.cu)}).\n`:'')+o.body;
+ const e={ts,title,body,sym:o.r.sym,book:o.book||null,y:o.y||null};C.log.unshift(e);if(C.log.length>100)C.log.length=100;save();
+ toast(e);beep();sysN(e);if(C.tg.on)tg(title+'\n'+body);renderLog()}
+let tN=0;
+function toast(e){let d=document.getElementById('botT');tN=d?tN+1:0;if(!d){d=document.createElement('div');d.id='botT';document.body.appendChild(d)}
+ const G=window.tlGop,bk=e.book&&G&&G.books()[e.book];
+ d.innerHTML=`<b>🔔 ${esc(e.title)}</b><div>${esc(e.body)}</div>${tN?`<p class="cap" style="margin:6px 0 0">Còn ${tN} nhắc khác, xem ở tab Robot nhắc lệnh.</p>`:''}<div class="row">${bk?'<button id="botTo">Mở sổ &amp; tính lệnh</button>':''}<button class="s" id="botTx">Đã xem</button></div>`;
+ if(bk)document.getElementById('botTo').onclick=()=>{d.remove();G.open(e.book,e.y)};
+ document.getElementById('botTx').onclick=()=>d.remove()}
+function unlock(){try{if(!R.ac){const A=window.AudioContext||window.webkitAudioContext;if(!A)return;R.ac=new A();const s=R.ac.createBufferSource();s.buffer=R.ac.createBuffer(1,1,22050);s.connect(R.ac.destination);s.start(0)}if(R.ac.state==='suspended')R.ac.resume()}catch(e){}}
+function beep(){if(!C.snd||!R.ac)return;try{const ac=R.ac,t=ac.currentTime+.05;
+ for(let i=0;i<3;i++){const o=ac.createOscillator(),g=ac.createGain(),s=t+i*.28;o.type='sine';o.frequency.value=i==1?1175:880;
+  g.gain.setValueAtTime(.0001,s);g.gain.exponentialRampToValueAtTime(.4,s+.02);g.gain.exponentialRampToValueAtTime(.0001,s+.22);o.connect(g);g.connect(ac.destination);o.start(s);o.stop(s+.24)}}catch(e){}}
+const canN=()=>'Notification' in window;
+function sysN(e){if(!C.ntf||!canN()||Notification.permission!=='granted')return;try{new Notification(e.title,{body:e.body,tag:'tl'+e.ts})}catch(x){}}
+async function wake(){if(!C.on||!C.wake||document.hidden||R.wl||!navigator.wakeLock)return;
+ try{R.wl=await navigator.wakeLock.request('screen');R.wl.addEventListener('release',()=>{R.wl=null;status()});status()}catch(e){}}
+function unwake(){if(R.wl){const w=R.wl;R.wl=null;try{w.release()}catch(e){}}}
+/* Telegram: gửi lần lượt từng tin */
+async function tgCall(m,params){const tk=C.tg.tk.trim();if(!tk)throw Error('Hãy nhập mã bot.');
+ const u=`https://api.telegram.org/bot${encodeURIComponent(tk).replace('%3A',':')}/${m}`,body=new URLSearchParams(params||{});
+ let r;try{r=await fetch(u,{method:'POST',body})}catch(e){
+  if(m==='sendMessage'){try{await fetch(u,{method:'POST',body,mode:'no-cors'});return{unk:1}}catch(x){}}
+  throw Error('Không kết nối được Telegram. Hãy kiểm tra mạng.')}
+ const j=await r.json().catch(()=>null);if(!j||!j.ok)throw Error(j&&j.description?'Telegram báo lỗi: '+j.description:'Telegram báo lỗi HTTP '+r.status);return j.result}
+function tg(text){R.tq=R.tq.then(()=>tgCall('sendMessage',{chat_id:C.tg.chat.trim(),text})).then(()=>{if(R.tgErr){R.tgErr='';status()}}).catch(e=>{R.tgErr=e.message;status()})}
+
+/* ===== Bật / tắt ===== */
+function start(){C.on=true;save();unlock();wake();connect();renderAll()}
+function stop(){C.on=false;C.seen={};save();R.gen++;close();unwake();R.px={};R.kl={};status();renderAll()}
+function status(t,c){const S=syms(),now=Date.now();let ok='';
+ if(!C.on){t='Robot đang tắt. Bấm “Bật robot” để bắt đầu theo dõi giá.';c=''}
+ else if(!S.length){t='Robot đang bật nhưng chưa có nhắc nào đang bật. Thêm nhắc ở mục 2.';c='warn'}
+ else if(document.hidden){t='Robot tạm dừng vì app đang ẩn.';c='warn'}
+ else if(R.msg){t=R.msg;c='bad'}
+ else if(!t&&R.ok){const ag=Math.round((now-R.last)/1000);t=`Robot đang chạy · theo dõi ${S.length} sản phẩm (${S.join(', ')}) · giá mới nhất ${R.last?hms(R.last):'–'}`+(ag>15?` (đã ${ag} giây chưa có giá mới)`:'')+(R.wl?' · màn hình luôn sáng':'');c=ag>15?'warn':'ok'}
+ else if(!t){t='Đang kết nối giá…';c='warn'}
+ if(C.on&&R.tgErr)t+=' · Telegram: '+R.tgErr;
+ $b('statT').textContent=t;$b('dot').className='ldot '+(c||'');
+ $b('on').textContent=C.on?'■ Tắt robot':'▶ Bật robot';$b('on').className=C.on?'x':'';
+ const tb=document.getElementById('tbBot');tb.innerHTML='Robot nhắc lệnh'+(C.on?'<i class="bd" style="background:'+(c=='ok'?'var(--up)':c=='bad'?'var(--dn)':'#f59e0b')+'"></i>':'')}
+let lsT=0;const lazyStat=()=>{if(lsT)return;lsT=setTimeout(()=>{lsT=0;status()},1000)};
+
+/* ===== Hiển thị các nhắc ===== */
+const TYN={book:'Theo sổ',grid:'Mắc lưới',px:'Mức giá'};
+function ruleHTML(r){const x=R.px[r.sym],G=window.tlGop,cur=x?`Giá hiện tại <b style="display:inline">${pf(x)}</b>`:'Chưa có giá';let t='',d='';
+ if(r.t=='book'){const b=bookOf(r);t=`Sổ: ${esc(b?b.name:'(đã xóa)')}`;
+  if(b&&G){const T=trig(r,b),g=G.rnd(b,G.lq(b)-G.acct(b).pos);
+   d=`${esc(r.sym)} · ${esc(G.name(b.m))}<br>${cur} · giá của sổ ${pf(b.S.x)}<br>Mắc trên có lệnh: ${T.up!=null?'mắc '+T.ku+' · '+pf(T.up)+(x?' ('+pc(T.up,x)+')':''):'không có trong '+MAXLV+' mắc'}<br>Mắc dưới có lệnh: ${T.dn!=null?'mắc '+T.kd+' · '+pf(T.dn)+(x?' ('+pc(T.dn,x)+')':''):'không có trong '+MAXLV+' mắc'}`;
+   if(g)d+=`<br><span class="wn">Sổ đang lệch với số lượng thực tế: cần lệnh bù ${g>0?'mua':'bán'} ${fmt(Math.abs(g),8)} (xem tab Trợ lý gộp lệnh).</span>`;
+   if(r.sig)d+=`<br><span class="wn">Đã nhắc lúc ${hm(r.at)}, đang chờ bạn xác nhận khớp ở tab Trợ lý gộp lệnh.</span>`}}
+ else if(r.t=='grid'){const st=r.a*r.step/100;t=`Lưới ${esc(r.sym)} · ${fmt(r.step,4)}%`;
+  d=`Mắc 0 giá ${pf(r.a)} · mỗi mắc ${pf(st)}<br>${cur}`+(r.u!=null?`<br>Mắc kế tiếp: lên mắc ${r.u} · ${pf(r.a+r.u*st)}${x?' ('+pc(r.a+r.u*st,x)+')':''} · xuống mắc ${r.d} · ${pf(r.a+r.d*st)}${x?' ('+pc(r.a+r.d*st,x)+')':''}`:'')}
+ else{t=`${esc(r.sym)} ${r.dir>0?'≥':'≤'} ${pf(r.x)}`;d=`${cur}${x?' · còn cách '+pc(r.x,x):''}<br>${r.rep?'Nhắc mỗi lần giá chạm lại mức':'Nhắc một lần rồi tự tắt'}`+(r.armed===false&&r.on?'<br><span class="wn">Đã nhắc, chờ giá quay lại rồi mới nhắc tiếp.</span>':'')}
+ return`<div class="rule${r.on?'':' off'}"><b>${t}<small class="cap" style="font-weight:400"> · ${TYN[r.t]}${r.on?'':' · đang tắt'}</small></b><p class="cap">${d}</p>${r.err?`<p class="err" style="margin:4px 0 0">${esc(r.err)}</p>`:''}
+ <div class="row"><button class="s" data-a="tg" data-i="${r.id}">${r.on?'Tạm tắt':'Bật lại'}</button>${r.t=='book'&&bookOf(r)?`<button class="s" data-a="op" data-i="${r.id}">Mở sổ</button>`:''}<button class="x" data-a="del" data-i="${r.id}">${R.del===r.id?'Bấm lần nữa để xóa':'Xóa'}</button></div></div>`}
+function renderRules(){$b('rules').innerHTML=C.rules.length?C.rules.map(ruleHTML).join(''):'<p class="st" style="margin-top:0">Chưa có nhắc nào. Thêm nhắc ở bên dưới.</p>'}
+const lazyRules=()=>{if(R.rr)return;R.rr=setTimeout(()=>{R.rr=0;if(R.view)renderRules()},1000)};
+function renderLog(){if(!R.view)return;const L=C.log.slice(0,50),G=window.tlGop;
+ $b('log').innerHTML=L.length?L.map((e,i)=>`<div class="lg"><time>${dt(e.ts)}:${p2(new Date(e.ts).getSeconds())}</time><b>${esc(e.title)}</b><div>${esc(e.body)}</div>${e.book&&G&&G.books()[e.book]?`<button class="s" data-lo="${i}">Mở sổ &amp; tính lệnh</button>`:''}</div>`).join(''):'<p class="cap">Chưa có lần nhắc nào.</p>'}
+function renderAll(){status();if(!R.view)return;renderRules();renderLog()}
+
+/* ===== Form thêm nhắc ===== */
+function fillBooks(){const G=window.tlGop,B=G?Object.values(G.books()):[],v=$b('bk').value;
+ $b('bk').innerHTML=B.length?B.map(b=>`<option value="${b.id}">${esc(b.name)}${b.prod?' · '+esc(b.prod):''}</option>`).join(''):'<option value="">(chưa có sổ, hãy tạo ở tab Trợ lý gộp lệnh)</option>';
+ if(v&&B.some(b=>b.id==v))$b('bk').value=v}
+function guess(){const G=window.tlGop,b=G&&G.books()[$b('bk').value];if(!b)return;let s=String(b.prod||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(s&&!/(USDT|USDC|FDUSD|BTC|ETH|BNB)$/.test(s))s+='USDT';$b('sym').value=s}
+const INFO={book:'Nhắc đúng lúc phương pháp của sổ cần mua, bán hoặc cắt, kèm số lượng đặt trên sàn. Sổ tạo và xác nhận khớp ở tab Trợ lý gộp lệnh.',grid:'Nhắc mỗi khi giá chạm một mắc lưới mới (lên hoặc xuống). Dùng để theo dõi lưới mà chưa cần sổ.',px:'Nhắc khi giá lên tới hoặc xuống tới một mức bạn chọn.'};
+function form(){const t=$b('typ').value,sh=(id,v)=>{$b(id).hidden=!v};
+ sh('bkW',t=='book');sh('aW',t=='grid');sh('stW',t=='grid');sh('dirW',t=='px');sh('xW',t=='px');sh('rpW',t=='px');sh('px0',t!='book');$b('typInfo').textContent=INFO[t];
+ if(t=='book'){fillBooks();if(!$b('sym').value)guess()}}
+async function px0(){const s=$b('sym').value.trim().toUpperCase();$b('err1').textContent='';if(!/^[A-Z0-9]{5,20}$/.test(s)){$b('err1').textContent='Hãy nhập mã sản phẩm, ví dụ BTCUSDT.';return}
+ try{const j=await getJ('/api/v3/ticker/price?symbol='+s),p=+j.price;$b($b('typ').value=='grid'?'a':'x').value=+p.toPrecision(8)}catch(e){$b('err1').textContent=e.code==400?'Không tìm thấy mã '+s+' trên Binance.':NET}}
+async function add(){const t=$b('typ').value,f=parseFloat,s=$b('sym').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,''),er=m=>{$b('err1').textContent=m};er('');
+ if(!/^[A-Z0-9]{5,20}$/.test(s))return er('Hãy nhập mã sản phẩm trên Binance, ví dụ BTCUSDT.');
+ const r={id:'r'+Date.now(),t,sym:s,on:true,since:Date.now()};
+ if(t=='book'){const G=window.tlGop,b=G&&G.books()[$b('bk').value];if(!b)return er('Chưa có sổ. Hãy tạo sổ ở tab Trợ lý gộp lệnh trước.');
+  if(C.rules.some(x=>x.t=='book'&&x.book==b.id&&x.sym==s))return er('Sổ này đã có nhắc với mã '+s+'.');r.book=b.id}
+ else if(t=='grid'){r.a=f($b('a').value);r.step=f($b('st').value);if(!(r.a>0))return er('Hãy nhập giá khởi tạo lớn hơn 0.');if(!(r.step>0))return er('Khoảng cách lưới phải lớn hơn 0.')}
+ else{r.x=f($b('x').value);r.dir=+$b('dir').value;r.rep=$b('rp').value=='1';if(!(r.x>0))return er('Hãy nhập mức giá lớn hơn 0.')}
+ $b('add').disabled=true;
+ try{await getJ('/api/v3/ticker/price?symbol='+s)}catch(e){if(e.code==400){$b('add').disabled=false;return er('Không tìm thấy mã '+s+' trên Binance.')}er('Chưa kiểm tra được mã '+s+' vì không lấy được giá. Nhắc vẫn được thêm, robot sẽ thử lại khi có mạng.')}
+ $b('add').disabled=false;
+ C.rules.push(r);save();
+ if(C.on){if(syms().join(',')!==R.syms)connect();else if(R.px[s])feed(s,[{p:R.px[s],t:Date.now()}])}
+ renderAll();if(!C.on&&!$b('err1').textContent)er('Đã thêm nhắc. Bấm “Bật robot” ở mục 1 để bắt đầu theo dõi.')}
+
+/* ===== Sự kiện ===== */
+$b('on').onclick=()=>{$b('err0').textContent='';C.on?stop():start()};
+$b('test').onclick=()=>{unlock();notify({r:{sym:'–'},title:'Thử nhắc',body:'Robot nhắc lệnh đang hoạt động. Nếu bạn nghe tiếng chuông'+(C.tg.on?' và nhận được tin Telegram':'')+' thì robot đã sẵn sàng.'})};
+$b('snd').onchange=()=>{C.snd=$b('snd').checked;save();if(C.snd){unlock();beep()}};
+$b('wake').onchange=()=>{C.wake=$b('wake').checked;save();if(C.wake)wake();else unwake();status();if(C.wake&&!navigator.wakeLock)$b('err0').textContent='Trình duyệt này chưa hỗ trợ giữ màn hình sáng. Trên iPhone hãy tắt tự khóa màn hình trong Cài đặt › Màn hình & Độ sáng khi chạy robot.'};
+$b('ntf').onchange=async()=>{$b('err0').textContent='';C.ntf=$b('ntf').checked;
+ if(C.ntf){if(!canN()){C.ntf=false;$b('ntf').checked=false;$b('err0').textContent='Máy này chưa cho trang web hiện thông báo hệ thống. Trên iPhone hãy dùng Telegram (mục 3) để nhận nhắc.'}
+  else if(Notification.permission!=='granted'){try{const p=await Notification.requestPermission();if(p!=='granted'){C.ntf=false;$b('ntf').checked=false;$b('err0').textContent='Bạn chưa cho phép thông báo.'}}catch(e){C.ntf=false;$b('ntf').checked=false}}}
+ save()};
+$b('rep').onchange=()=>{C.rep=+$b('rep').value;save()};
+$b('typ').onchange=form;$b('bk').onchange=guess;$b('add').onclick=add;$b('px0').onclick=px0;
+$b('rules').onclick=e=>{const el=e.target.closest('button[data-a]');if(!el)return;const r=C.rules.find(x=>x.id==el.dataset.i);if(!r)return;const a=el.dataset.a;
+ if(a=='del'){if(R.del!==r.id){R.del=r.id;renderRules();return}C.rules=C.rules.filter(x=>x!==r);R.T.delete(r.id);R.del=null}
+ else if(a=='tg'){r.on=!r.on;if(r.on){r.since=Date.now();r.armed=true;r.u=r.d=null}}
+ else if(a=='op'){window.tlGop.open(r.book,R.px[r.sym]);return}
+ R.del=null;save();if(C.on&&syms().join(',')!==R.syms)connect();renderAll()};
+$b('log').onclick=e=>{const el=e.target.closest('button[data-lo]');if(!el)return;const x=C.log[+el.dataset.lo];if(x&&x.book)window.tlGop.open(x.book,x.y)};
+$b('clr').onclick=()=>{C.log=[];save();renderLog()};
+const tgS=(m,c)=>{const s=$b('tgS');s.hidden=!m;s.innerHTML=m?`<span class="${c||''}">${esc(m)}</span>`:''};
+$b('tk').onchange=()=>{C.tg.tk=$b('tk').value.trim();save()};$b('chat').onchange=()=>{C.tg.chat=$b('chat').value.trim();save()};
+$b('tgOn').onchange=()=>{C.tg.on=$b('tgOn').checked;save();if(C.tg.on&&!(C.tg.tk&&C.tg.chat))tgS('Hãy nhập mã bot và chat ID rồi bấm “Gửi thử”.','wn')};
+$b('tgId').onclick=async()=>{C.tg.tk=$b('tk').value.trim();save();tgS('Đang hỏi Telegram…');
+ try{const U=await tgCall('getUpdates'),m=U.map(u=>u.message||u.edited_message||u.channel_post||(u.callback_query&&u.callback_query.message)).filter(Boolean).pop();
+  if(!m){tgS('Chưa thấy tin nhắn nào gửi tới bot. Hãy mở bot trong Telegram, bấm Start, gửi một tin bất kỳ rồi bấm lại.','wn');return}
+  C.tg.chat=String(m.chat.id);$b('chat').value=C.tg.chat;save();tgS('Đã tìm thấy chat ID '+C.tg.chat+' ('+(m.chat.first_name||m.chat.title||m.chat.username||'')+'). Bấm “Gửi thử”.','pos')}
+ catch(e){tgS(e.message+' Nếu không tìm được, hãy nhắn cho @userinfobot trong Telegram để lấy chat ID.','neg')}};
+$b('tgT').onclick=async()=>{C.tg.tk=$b('tk').value.trim();C.tg.chat=$b('chat').value.trim();save();if(!C.tg.chat){tgS('Hãy nhập chat ID (hoặc bấm “Tìm chat ID”).','wn');return}tgS('Đang gửi…');
+ try{const r=await tgCall('sendMessage',{chat_id:C.tg.chat,text:'🔔 Trading Lab: robot nhắc lệnh đã kết nối với Telegram.'});R.tgErr='';
+  if(r&&r.unk)tgS('Đã gửi nhưng không xác nhận được. Hãy xem Telegram: có tin thì đã xong.','wn');else{tgS('Đã gửi. Hãy xem tin trong Telegram.','pos');if(!C.tg.on){C.tg.on=true;$b('tgOn').checked=true;save()}}status()}
+ catch(e){tgS(e.message,'neg')}};
+document.addEventListener('pointerdown',()=>{unlock();if(C.on)wake()},{passive:true});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){R.gen++;close();save();status()}else if(C.on){connect();wake()}});
+addEventListener('online',()=>{if(C.on)connect()});
+addEventListener('pagehide',()=>{try{localStorage.setItem('tl_bot',JSON.stringify(C))}catch(e){}});
+/* Mỗi 10 giây: kết nối lại nếu lâu không có giá, nhắc lại lệnh theo sổ chưa xác nhận, lưu vị trí nến đã xem */
+setInterval(()=>{if(!C.on||document.hidden)return;const now=Date.now();
+ if((R.ws&&now-R.last>45000)||(!R.ws&&!R.rt&&!R.busy&&syms().length))connect();
+ if(C.rep>0)for(const r of C.rules){if(!r.on||r.t!='book'||!r.sig||now-r.at<C.rep*MIN)continue;const b=bookOf(r);if(!b)continue;trig(r,b);if(!r.sig)continue;
+  r.at=now;const [title,...rest]=r.msg.split('\n');notify({r,title:'Nhắc lại · '+title,body:rest.join('\n')+`\n(Lần nhắc đầu lúc ${hm(r.at0||now)})`,book:r.book,y:r.y})}
+ save();status();if(R.view)renderRules()},10000);
+window.tlBotView=v=>{R.view=v;if(v){fillBooks();form();renderAll()}};
+/* Khởi động: nạp cài đặt; nếu lần trước robot đang bật thì chạy tiếp */
+$b('snd').checked=C.snd;$b('wake').checked=C.wake;$b('ntf').checked=C.ntf;$b('rep').value=String(C.rep);$b('tk').value=C.tg.tk;$b('chat').value=C.tg.chat;$b('tgOn').checked=C.tg.on;
+$b('syms').innerHTML=LIVE_SY.map(s=>`<option value="${s[0]}">${s[1]}</option>`).join('');
+form();status();if(C.on){connect();wake()}
+})();
+</script>
+
+<script>
 /* ===== Tự cập nhật khi có bản mới trên GitHub Pages =====
    Mỗi lần sửa app phải đổi APP_VER. Khi mở app hoặc quay lại app, tải lại index.html (bỏ qua bộ nhớ đệm)
    để so phiên bản: vừa mở app thì tự tải lại; đang dùng thì hiện thanh báo để bạn chọn lúc cập nhật. */
-const APP_VER='2026-11-27.3';
+const APP_VER='2026-11-27.4';
 (()=>{
 let inFrame=true;try{inFrame=window.top!==window.self}catch(e){}
 if(!/^https?:$/.test(location.protocol)||inFrame)return;
