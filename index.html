@@ -94,6 +94,17 @@ label.chk{flex-direction:row;align-items:center;gap:10px;margin-top:10px;font-si
 label.chk input{width:22px;height:22px;flex:none;margin:0}
 #tabLoc tr[data-s]{cursor:pointer}#tabLoc tr.fade{opacity:.45}#tabLoc tr.sel td{background:rgba(37,99,235,.13)}
 #tabLoc #f_detB button{flex:1 1 140px}
+/* Phân tích giá (tab Lọc sản phẩm) */
+#tabLoc .an{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-top:12px}
+#tabLoc .an>div{border:1px solid var(--bd);border-radius:10px;padding:10px 12px;background:var(--bg)}
+#tabLoc .an h3{font-size:14px;margin:0}#tabLoc .an .cap{margin:2px 0 6px}
+#tabLoc .an ol{list-style:none;margin:0;padding:0}
+#tabLoc .an li{display:flex;gap:8px;align-items:baseline;padding:7px 0;border-top:1px solid var(--bd);cursor:pointer}
+#tabLoc .an li>i{font-style:normal;color:var(--mu);width:14px;flex:none}
+#tabLoc .an li>span{flex:1;min-width:0}#tabLoc .an li small{display:block;color:var(--mu);font-size:11.5px;line-height:1.35}
+#tabLoc .an li>b{flex:none;font-variant-numeric:tabular-nums}
+#tabLoc .an li.sel{background:rgba(37,99,235,.13);border-radius:6px}
+#tabLoc .an li.no{cursor:default;color:var(--mu);font-size:13px}
 /* Bản đồ tương quan (tab Giá trực tuyến) */
 #lcm{border-collapse:separate;border-spacing:2px;width:auto;margin:0 auto;font-size:11.5px;font-variant-numeric:tabular-nums}
 #lcw{overflow:auto;max-height:78vh;margin-top:10px;-webkit-overflow-scrolling:touch}
@@ -363,6 +374,20 @@ label.chk input{width:22px;height:22px;flex:none;margin:0}
 <p class="cap" style="margin-top:12px">Chạy thử từng phương pháp trên cùng dữ liệu (các số % tính trên vốn chiếm dụng tối đa của phương pháp đó)</p>
 <div class="sc"><table id="f_detTb"></table></div>
 <div class="row" id="f_detB"></div>
+</section>
+
+<section class="card" id="f_anC" hidden>
+<h2>5. Phân tích giá</h2>
+<p class="cap" style="margin-top:0">Xếp hạng 3 sản phẩm đứng đầu theo từng đặc điểm giá, tính trên nến đã tải ở mục 2 (gộp thành nến ngày theo giờ UTC). Chạm vào một sản phẩm để xem chi tiết.</p>
+<div class="grid">
+ <label>Số ngày của khung biên độ (N)<input id="f_an_n" type="number" min="2" max="365" step="1" inputmode="numeric"></label>
+ <label>Chiều biên độ<select id="f_an_dir"><option value="all">Cả hai chiều</option><option value="up">Chỉ chiều tăng (đáy trước, đỉnh sau)</option></select></label>
+ <label>Cách tính một đợt tăng<select id="f_an_wm"><option value="sw">Sóng tăng (theo ngưỡng đảo chiều)</option><option value="cnt">Chuỗi nến tăng liên tiếp (đóng &gt; mở)</option></select></label>
+ <label id="f_an_wxW">Ngưỡng đảo chiều của sóng (%)<input id="f_an_wx" type="number" step="any" min="0" inputmode="decimal"></label>
+</div>
+<label class="chk"><input type="checkbox" id="f_an_f"> Chỉ xét sản phẩm đạt bộ lọc ở mục 3</label>
+<p class="st" id="f_anS"></p>
+<div class="an" id="f_an"></div>
 </section>
 
 <section class="card">
@@ -964,7 +989,7 @@ const HINT={
 /* Mã tiền mặt ổn định: bỏ khỏi danh sách “giao dịch nhiều nhất” */
 const STABLE=/^(USDC|FDUSD|TUSD|BUSD|DAI|USDP|USDE|PYUSD|USD1|BFUSD|RLUSD|XUSD|AEUR|EUR|EURI|GBP|TRY|BRL|USDS|UST|USTC|PAX|SUSD|GUSD)$/;
 const KEYS=Object.keys(METHODS),NM=k=>'PP'+(KEYS.indexOf(k)+1),SN=k=>NM(k)+': '+METHODS[k].name.split(' (')[0];
-const F={m:KEYS[0],src:'top',top:'20',tf:'4h',n:500,step:1,list:DEF_LIST,tr:'side',tc:0,vol:0,sort:'bt',pos:false,all:false};
+const F={m:KEYS[0],src:'top',top:'20',tf:'4h',n:500,step:1,list:DEF_LIST,tr:'side',tc:0,vol:0,sort:'bt',pos:false,all:false,an_n:20,an_dir:'all',an_wm:'sw',an_wx:5,an_f:false};
 try{const v=JSON.parse(localStorage.getItem('tl_loc')||'{}');if(v&&typeof v=='object')Object.assign(F,v)}catch(e){}
 if(!METHODS[F.m])F.m=KEYS[0];
 const keep=()=>{try{localStorage.setItem('tl_loc',JSON.stringify(F))}catch(e){}};
@@ -976,10 +1001,11 @@ const stat=t=>{$('stat').textContent=t};
 
 /* ----- Đọc / ghi ô nhập ----- */
 function fill(){$('m').innerHTML=KEYS.map(k=>`<option value="${k}">${esc(SN(k))}</option>`).join('');
- for(const k of ['m','src','top','tf','n','step','list','tr','tc','vol','sort'])$(k).value=F[k];
- $('pos').checked=!!F.pos;$('all').checked=!!F.all;src();minfo()}
-function readF(){for(const k of ['m','src','top','tf','list','tr','sort'])F[k]=$(k).value;
- for(const k of ['n','step','tc','vol'])F[k]=parseFloat($(k).value);F.pos=$('pos').checked;F.all=$('all').checked;keep()}
+ for(const k of ['m','src','top','tf','n','step','list','tr','tc','vol','sort','an_n','an_dir','an_wm','an_wx'])$(k).value=F[k];
+ $('pos').checked=!!F.pos;$('all').checked=!!F.all;$('an_f').checked=!!F.an_f;src();minfo();anW()}
+function readF(){for(const k of ['m','src','top','tf','list','tr','sort','an_dir','an_wm'])F[k]=$(k).value;
+ for(const k of ['n','step','tc','vol','an_n','an_wx'])F[k]=parseFloat($(k).value);F.pos=$('pos').checked;F.all=$('all').checked;F.an_f=$('an_f').checked;keep()}
+function anW(){$('an_wxW').hidden=$('an_wm').value!='sw'}
 function src(){const l=$('src').value=='list';$('listW').hidden=!l;$('topW').hidden=l}
 function minfo(){const k=$('m').value,m=METHODS[k],h=HINT[k];
  $('minfo').innerHTML='<b>'+esc(SN(k))+'</b><small>'+esc(m.tag)+'</small><p>'+esc(m.desc)+'</p>'+(h?'<p><span style="color:var(--tx);font-weight:600">Sản phẩm hợp:</span> '+esc(h.t)+'</p>':'')}
@@ -1039,7 +1065,7 @@ function stop(){if(!meta||meta.tot==null){run++;return}run++;stat('Đã dừng. 
 function trOk(s){const u=s.chg>0;switch(F.tr){case'side':return s.z<0.7;case'sideup':return s.z<0.7||u;case'up':return s.z>=0.7&&u;case'dn':return s.z>=0.7&&!u;case'trend':return s.z>=1;default:return true}}
 function pass(r){const b=r.bt[F.m];return trOk(r.s)&&r.s.tc>=(F.tc>0?F.tc:0)&&(!(F.vol>0)||(r.vol!=null&&r.vol>=F.vol*1e6))&&(!F.pos||(b&&b.rc>0))}
 const SK={bt:r=>{const b=r.bt[F.m];return b&&b.rc!=null?b.rc:-Infinity},tc:r=>r.s.tc,vo:r=>r.s.vo,zl:r=>-r.s.z,zh:r=>r.s.z,vol:r=>r.vol??-1};
-function render(){const C=$('resC');if(!R.length){C.hidden=true;$('detC').hidden=true;return}C.hidden=false;
+function render(){const C=$('resC');if(!R.length){C.hidden=true;$('detC').hidden=true;$('anC').hidden=true;return}C.hidden=false;
  const k=F.m,key=SK[F.sort]||SK.bt,L=R.map(r=>({r,ok:pass(r)})).sort((u,v)=>(v.ok-u.ok)||(key(v.r)-key(u.r))),ok=L.filter(x=>x.ok).length,sh=F.all?L:L.filter(x=>x.ok);
  const bw=R.filter(r=>r.best==k).length;
  $('sum').textContent=ok+'/'+R.length+' sản phẩm đạt bộ lọc cho '+SN(k)+' · '+bw+' sản phẩm có '+NM(k)+' là phương pháp cho kết quả chạy thử cao nhất.';
@@ -1049,7 +1075,7 @@ function render(){const C=$('resC');if(!R.length){C.hidden=true;$('detC').hidden
   (sh.length?sh.map(x=>{const r=x.r,s=r.s,b=r.bt[k];return`<tr data-s="${esc(r.sym)}" class="${x.ok?'':'fade'}${r.sym==selSym?' sel':''}"><td>${x.ok?++j:'–'}</td><td><b>${esc(r.sym)}</b></td><td>${v(b)}</td><td>${r.best?(r.best==k?'<b>★ ':'')+NM(r.best)+' · '+pct(r.bt[r.best].rc,1)+(r.best==k?'</b>':''):'–'}</td><td>${trLabel(s)} · ${fmt(s.z,2)}</td><td class="${cls(s.chg)}">${pct(s.chg)}</td><td>${fmt(s.vo,2)}%</td><td>${fmt(s.tc,2)}</td><td>${fmt(s.dd,1)}%</td><td>${r.vol!=null&&isFinite(r.vol)?fmt(r.vol/1e6,1)+' tr':'–'}</td></tr>`}).join('')
   :'<tr><td colspan="10" style="text-align:left;white-space:normal;color:var(--mu)">Không có sản phẩm nào đạt bộ lọc. Hãy nới bộ lọc hoặc bật “Hiện cả sản phẩm không đạt bộ lọc”.</td></tr>');
  $('fail').textContent=meta&&meta.fail.length?'Không tải được: '+meta.fail.join(', '):'';
- detail()}
+ detail();anRender()}
 function detail(){const r=R.find(x=>x.sym==selSym),C=$('detC');if(!r){C.hidden=true;return}C.hidden=false;const s=r.s,B=r.B,dc=s.a>=1000?2:s.a>=10?3:s.a>=1?4:6;
  $('detT').textContent='Chi tiết · '+r.sym;
  $('detM').innerHTML=[['Xu hướng',trLabel(s)+' · '+fmt(s.z,2),''],['Thay đổi giá',pct(s.chg),cls(s.chg)],['Giá đầu → cuối',fmt(s.a,dc)+' → '+fmt(s.c,dc),''],['Biến động TB mỗi nến',fmt(s.vo,2)+'%',''],['Chạm mắc mỗi nến',fmt(s.tc,2),''],['Sụt giảm giá tối đa',fmt(s.dd,1)+'%',''],['Giao dịch 24 giờ',r.vol!=null&&isFinite(r.vol)?fmt(r.vol/1e6,1)+' triệu':'–',''],['Dữ liệu',B.length+' nến '+TFN[meta.tf]+' · '+dd2(B[0].t)+' → '+dd2(B[B.length-1].t),'']]
@@ -1059,6 +1085,75 @@ function detail(){const r=R.find(x=>x.sym==selSym),C=$('detC');if(!r){C.hidden=t
   KEYS.map(k=>{const t=r.bt[k],nm=(k==r.best?'★ ':'')+esc(SN(k)),w=k==F.m?'font-weight:700':'';
    return t.e?`<tr style="${w}"><td>${nm}</td><td colspan="6" class="wn" style="text-align:left">${esc(t.e)}</td></tr>`:`<tr style="${w}"><td>${nm}</td>${c(t.rc)}${c(t.re)}${c(t.fl)}<td>${t.dd==null?'–':fmt(t.dd,2)+'%'}</td><td>${fmt(t.mo,0)}</td><td>${fmt(t.cy,0)}</td></tr>`}).join('');
  $('detB').innerHTML=KEYS.map(k=>`<button class="${k==F.m?'':'s'}" data-k="${k}">Thử ${NM(k)} trong Lab</button>`).join('')}
+
+/* ----- Phân tích giá: xếp hạng 3 sản phẩm đứng đầu theo từng đặc điểm ----- */
+/* Gộp nến đã tải thành nến ngày (theo ngày UTC, giống nến D1 của Binance) */
+function daysOf(B){const M=[];for(const b of B){const d=Math.floor(b.t/864e5),z=M[M.length-1];
+  if(z&&z.d==d){if(b.h>z.h)z.h=b.h;if(b.l<z.l)z.l=b.l;z.c=b.c}else M.push({d,t:b.t,o:b.o,h:b.h,l:b.l,c:b.c})}return M}
+/* Đợt tăng trên nến đã tải. cnt: chuỗi nến đóng > mở liên tiếp. sw: sóng tăng theo giá đóng, bắt đầu ở đáy, kết thúc khi giá đóng giảm ≥ x từ đỉnh */
+function upRuns(B,wm,x){const U=[];
+ if(wm=='cnt'){let i0=-1;for(let i=0;i<=B.length;i++){const g=i<B.length&&B[i].c>B[i].o;
+   if(g&&i0<0)i0=i;else if(!g&&i0>=0){U.push({n:i-i0,g:B[i-1].c/B[i0].o-1,t:B[i0].t});i0=-1}}return U}
+ const c=B.map(b=>b.c);let dir=0,lo=0,hi=0;
+ for(let i=1;i<c.length;i++){
+  if(dir>=0&&c[i]>c[hi])hi=i;if(dir<=0&&c[i]<c[lo])lo=i;
+  if(dir==1){if(c[i]<=c[hi]*(1-x)){U.push({n:hi-lo,g:c[hi]/c[lo]-1,t:B[lo].t});dir=-1;lo=i}}
+  else if(dir==-1){if(c[i]>=c[lo]*(1+x)){dir=1;hi=i}}
+  else if(c[i]>=c[lo]*(1+x)){dir=1;hi=i}else if(c[i]<=c[hi]*(1-x)){dir=-1;lo=i}}
+ if(dir==1&&hi>lo)U.push({n:hi-lo,g:c[hi]/c[lo]-1,t:B[lo].t,on:1});/* sóng đang chạy, chưa kết thúc */
+ return U}
+function anOf(r,o){const k=JSON.stringify(o);if(r._ak===k)return r._a;
+ const D=daysOf(r.B),nd=D.length,N=Math.max(1,Math.min(o.n,nd)),a={nd,N};
+ /* Biên độ lớn nhất trong N ngày: (đỉnh − đáy) ÷ đáy, đáy và đỉnh cách nhau dưới N ngày; nếu nhiều cặp cùng biên độ thì lấy cặp gần nhau nhất */
+ let A=-1,bp=0,bq=0;
+ for(let p=0;p<nd;p++)for(let q=Math.max(o.dir=='up'?p:0,p-N+1);q<Math.min(nd,p+N);q++){const v=D[q].h/D[p].l-1;
+  if(v>A+1e-12||(v>=A-1e-12&&Math.abs(q-p)<Math.abs(bq-bp))){A=v;bp=p;bq=q}}
+ a.amp={v:A*100,dn:Math.abs(bq-bp)+1,lo:D[bp],hi:D[bq],w:bq<bp?'dn':bq>bp?'up':'in'};
+ /* Tăng trưởng mỗi ngày theo giá đóng ngày */
+ if(nd>=2){const ch=[];for(let i=1;i<nd;i++)ch.push(D[i].c/D[i-1].c-1);
+  const up=ch.filter(v=>v>0).length;let bi=0;ch.forEach((v,i)=>{if(v>ch[bi])bi=i});
+  a.gr={v:((D[nd-1].c/D[0].c)**(1/(nd-1))-1)*100,m:ch.reduce((s,v)=>s+v,0)/ch.length*100,tot:(D[nd-1].c/D[0].c-1)*100};
+  a.ud={v:up/ch.length*100,up,n:ch.length};
+  a.bd={v:ch[bi]*100,t:D[bi+1].t}}
+ /* Biên độ trong ngày trung bình */
+ {let s=0,mx=0,mt=0;for(const d of D){const v=d.h/d.l-1;s+=v;if(v>mx){mx=v;mt=d.t}}a.dr={v:s/nd*100,mx:mx*100,t:mt}}
+ /* Vị trí giá hiện tại trong biên độ N ngày gần nhất (0% = đáy, 100% = đỉnh) */
+ {const W=D.slice(-N),lo=Math.min(...W.map(d=>d.l)),hi=Math.max(...W.map(d=>d.h)),c=D[nd-1].c;
+  a.pos={v:hi>lo?(c-lo)/(hi-lo)*100:50,fl:(c/lo-1)*100,fh:(c/hi-1)*100}}
+ /* Đợt tăng */
+ {const U=upRuns(r.B,o.wm,o.wx/100);if(U.length){const sn=U.reduce((s,u)=>s+u.n,0),sg=U.reduce((s,u)=>s+u.g,0);
+  a.run={n:U.length,av:sn/U.length,mx:Math.max(...U.map(u=>u.n)),g:sg/U.length*100}}}
+ r._ak=k;r._a=a;return a}
+/* Các mục phân tích: tiêu đề, giải thích, giá trị xếp hạng, chiều sắp xếp, cách hiện */
+function anCats(o,tf){const T=TFN[tf],dn=n=>n+' ngày',pc=(v,d=2)=>fmt(v,d)+'%',ws={up:'đáy trước, đỉnh sau',dn:'đỉnh trước, đáy sau',in:'trong cùng 1 ngày'};
+ return[
+ {t:'Biên độ thấp → cao lớn nhất trong '+o.n+' ngày',c:'(Giá cao nhất − giá thấp nhất) ÷ giá thấp nhất, đáy và đỉnh nằm trong cùng một khoảng '+o.n+' ngày'+(o.dir=='up'?', chỉ tính chiều tăng':'')+'. Kèm số ngày ít nhất để đạt biên độ đó.',
+  f:a=>a.amp.v,sh:a=>[pc(a.amp.v),'đạt trong '+dn(a.amp.dn)+' ('+ws[a.amp.w]+')'+(a.amp.w=='dn'?' · đỉnh '+dd2(a.amp.hi.t)+' → đáy '+dd2(a.amp.lo.t):' · đáy '+dd2(a.amp.lo.t)+' → đỉnh '+dd2(a.amp.hi.t))+(a.nd<o.n?' · chỉ có '+dn(a.nd)+' dữ liệu':'')]},
+ {t:'Tăng trưởng giá trung bình mỗi ngày',c:'Tăng trưởng kép mỗi ngày theo giá đóng ngày trên toàn bộ dữ liệu: (giá cuối ÷ giá đầu)^(1 ÷ số ngày) − 1.',
+  f:a=>a.gr&&a.gr.v,sh:a=>[pct(a.gr.v,3),'trung bình cộng mỗi ngày '+pct(a.gr.m,3)+' · cả kỳ '+pct(a.gr.tot)+' · '+dn(a.nd)],cl:a=>cls(a.gr.v)},
+ {t:'Số nến trung bình của một đợt tăng',c:(o.wm=='sw'?'Sóng tăng: từ đáy đến đỉnh, sóng kết thúc khi giá đóng giảm ≥ '+fmt(o.wx,2)+'% từ đỉnh.':'Chuỗi nến tăng liên tiếp (giá đóng > giá mở).')+' Đếm theo nến '+T+' đã tải.',
+  f:a=>a.run&&a.run.av,sh:a=>[fmt(a.run.av,1)+' nến','dài nhất '+a.run.mx+' nến · '+a.run.n+' đợt · tăng TB '+pc(a.run.g)+' mỗi đợt']},
+ {t:'Mức tăng trung bình mỗi đợt tăng',c:'Cùng cách tính đợt tăng như mục trên, lấy trung bình % tăng từ đầu đến cuối mỗi đợt.',
+  f:a=>a.run&&a.run.g,sh:a=>['+'+pc(a.run.g),a.run.n+' đợt · trung bình '+fmt(a.run.av,1)+' nến '+T+' mỗi đợt'],cl:()=>'pos'},
+ {t:'Biên độ trong ngày trung bình lớn nhất',c:'Trung bình (cao − thấp) ÷ thấp của từng ngày. Cao thì giá dao động mạnh trong ngày.',
+  f:a=>a.dr.v,sh:a=>[pc(a.dr.v),'ngày dao động mạnh nhất '+pc(a.dr.mx)+' (ngày '+dd2(a.dr.t)+')']},
+ {t:'Tỷ lệ ngày tăng cao nhất',c:'Phần trăm số ngày có giá đóng cao hơn giá đóng ngày trước.',
+  f:a=>a.ud&&a.ud.v,sh:a=>[pc(a.ud.v,1),a.ud.up+'/'+a.ud.n+' ngày tăng']},
+ {t:'Ngày tăng mạnh nhất',c:'Mức tăng lớn nhất của giá đóng ngày so với giá đóng ngày trước.',
+  f:a=>a.bd&&a.bd.v,sh:a=>[pct(a.bd.v),'ngày '+dd2(a.bd.t)],cl:a=>cls(a.bd.v)},
+ {t:'Giá đang gần đáy '+o.n+' ngày nhất',c:'Vị trí giá hiện tại trong biên độ '+o.n+' ngày gần nhất: 0% = đang ở đáy, 100% = đang ở đỉnh. Xếp từ thấp lên cao.',
+  f:a=>a.pos.v,asc:1,sh:a=>[pc(a.pos.v,1),'cao hơn đáy '+pct(a.pos.fl)+' · thấp hơn đỉnh '+pct(a.pos.fh)]}]}
+function anRender(){const C=$('anC');if(!R.length||!meta){C.hidden=true;return}C.hidden=false;
+ const o={n:Math.max(2,Math.min(365,Math.round(F.an_n)||20)),dir:F.an_dir=='up'?'up':'all',wm:F.an_wm=='cnt'?'cnt':'sw',wx:F.an_wx>0?F.an_wx:5};
+ const L=(F.an_f?R.filter(pass):R).map(r=>({r,a:anOf(r,o)}));
+ if(!L.length){$('anS').textContent='Không có sản phẩm nào đạt bộ lọc ở mục 3 để phân tích. Hãy bỏ chọn “Chỉ xét sản phẩm đạt bộ lọc”.';$('an').innerHTML='';return}
+ const nd=Math.max(...L.map(x=>x.a.nd)),B=L.find(x=>x.a.nd==nd).r.B;
+ $('anS').innerHTML=esc('Phân tích '+L.length+' sản phẩm · '+nd+' ngày dữ liệu ('+dd2(B[0].t)+' → '+dd2(B[B.length-1].t)+') từ nến '+TFN[meta.tf]+'.')+
+  (nd<o.n?' <span class="wn">'+esc('Dữ liệu ngắn hơn '+o.n+' ngày nên biên độ tính trên toàn bộ '+nd+' ngày. Hãy tăng số nến hoặc chọn khung D1 rồi lọc lại.')+'</span>':'');
+ $('an').innerHTML=anCats(o,meta.tf).map(c=>{const T=L.filter(x=>{const v=c.f(x.a);return v!=null&&isFinite(v)}).sort((u,v)=>c.asc?c.f(u.a)-c.f(v.a):c.f(v.a)-c.f(u.a)).slice(0,3);
+  return'<div><h3>'+esc(c.t)+'</h3><p class="cap">'+esc(c.c)+'</p><ol>'+(T.length?T.map((x,i)=>{const h=c.sh(x.a);
+   return`<li data-s="${esc(x.r.sym)}" class="${x.r.sym==selSym?'sel':''}"><i>${i+1}</i><span><b>${esc(x.r.sym)}</b><small>${esc(h[1])}</small></span><b class="${c.cl?c.cl(x.a):''}">${esc(h[0])}</b></li>`}).join('')
+   :'<li class="no">Chưa đủ dữ liệu.</li>')+'</ol></div>'}).join('')}
 
 /* ----- Đưa sản phẩm vào Lab mô phỏng với đúng thông số đã chạy thử ----- */
 function toLab(r,k){const p=params(k,meta.step),B=r.B,q=v=>String(v).padStart(2,'0'),ts=t=>{const d=new Date(t);return d.getFullYear()+'-'+q(d.getMonth()+1)+'-'+q(d.getDate())+' '+q(d.getHours())+':'+q(d.getMinutes())};
@@ -1080,6 +1175,9 @@ $('tf').onchange=$('n').onchange=()=>{readF();if(R.length)stat('Khung nến ho�
 $('step').onchange=()=>{readF();if(!R.length||!meta)return;if(!(F.step>0)){$('err').textContent='Khoảng cách lưới phải lớn hơn 0.';return}
  $('err').textContent='';meta.step=F.step;R.forEach(r=>calc(r,F.step));stat('Đã chạy thử lại '+R.length+' sản phẩm với lưới '+fmt(F.step,4)+'% (dùng nến đã tải).');render()};
 $('tb').onclick=e=>{const t=e.target.closest('tr[data-s]');if(!t)return;selSym=selSym==t.dataset.s?null:t.dataset.s;render();if(selSym)$('detC').scrollIntoView({behavior:'smooth',block:'start'})};
+for(const k of ['an_n','an_wx'])$(k).addEventListener('input',()=>{readF();anRender()});
+for(const k of ['an_dir','an_wm','an_f'])$(k).onchange=()=>{anW();readF();anRender()};
+$('an').onclick=e=>{const t=e.target.closest('li[data-s]');if(!t)return;selSym=t.dataset.s;render();$('detC').scrollIntoView({behavior:'smooth',block:'start'})};
 $('detB').onclick=e=>{const b=e.target.closest('button[data-k]'),r=R.find(x=>x.sym==selSym);if(b&&r)toLab(r,b.dataset.k)};
 $('notes').innerHTML=['Nguồn giá: dữ liệu thị trường công khai của Binance, chỉ đọc giá, không giao dịch. Bản lưu trong claude.ai không lấy được giá, hãy mở bản trên GitHub Pages.',
  '“Chạy thử” = chạy đúng phương pháp như Lab mô phỏng trên các nến đã tải (mỗi nến đi O→L→H→C hoặc O→H→L→C), lưới theo % của giá mở nến đầu tiên, các thông số khác lấy mặc định của Lab. Kết quả = tổng lãi/lỗ (đã chốt + thả nổi) chia vốn chiếm dụng tối đa, giống cột “Lãi / vốn chiếm dụng tối đa” ở Lab. Không tính phí, thuế.',
@@ -1088,6 +1186,7 @@ $('notes').innerHTML=['Nguồn giá: dữ liệu thị trường công khai củ
  'Chạm mắc mỗi nến = số lần giá đi qua một mắc lưới chia số nến. Càng cao thì phương pháp lưới càng có nhiều lần mua, bán hoặc cắt. Chỉ số này đổi theo khoảng cách lưới.',
  'Biến động mỗi nến = trung bình (cao − thấp) ÷ giá mở. Sụt giảm giá tối đa = mức giảm lớn nhất tính từ đỉnh trước đó.',
  'Nguồn “giao dịch nhiều nhất” lấy các mã niêm yết bằng tiền mặt (USDT) trên Binance, bỏ các mã tiền mặt ổn định (USDC, FDUSD…). Giao dịch 24 giờ tính bằng triệu tiền mặt.',
+ 'Phân tích giá (mục 5) gộp nến đã tải thành nến ngày theo giờ UTC. Ngày đầu và ngày cuối có thể chưa đủ 24 giờ. Muốn khung biên độ N ngày chính xác thì dữ liệu phải dài hơn N ngày: ví dụ 500 nến H4 ≈ 83 ngày, 500 nến H1 ≈ 21 ngày.',
  'Kết quả quá khứ không bảo đảm tương lai. Nên thử lại với khung nến, số nến và khoảng lưới khác, rồi đưa sản phẩm vào Lab để xem từng bước.'].map(t=>'<li>'+t+'</li>').join('');
 fill();
 })();
@@ -1520,7 +1619,7 @@ form();status();if(C.on){connect();wake()}
 /* ===== Tự cập nhật khi có bản mới trên GitHub Pages =====
    Mỗi lần sửa app phải đổi APP_VER. Khi mở app hoặc quay lại app, tải lại index.html (bỏ qua bộ nhớ đệm)
    để so phiên bản: vừa mở app thì tự tải lại; đang dùng thì hiện thanh báo để bạn chọn lúc cập nhật. */
-const APP_VER='2026-11-27.5';
+const APP_VER='2026-11-28.1';
 (()=>{
 let inFrame=true;try{inFrame=window.top!==window.self}catch(e){}
 if(!/^https?:$/.test(location.protocol)||inFrame)return;
