@@ -129,6 +129,10 @@ label.chk input{width:22px;height:22px;flex:none;margin:0}
 #tabBot .lg button{margin-top:6px;padding:6px 10px}
 #botT{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:30;max-width:560px;max-height:60vh;overflow-y:auto;margin:0 auto;padding:12px;background:var(--card);color:var(--tx);border:2px solid var(--wn);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.25);font-size:14px}
 #botT b{display:block;margin-bottom:4px}#botT div{white-space:pre-line}#botT .row{margin-top:10px}#botT .row button{flex:1 1 100px;padding:8px 10px}
+/* Giữ tab để kéo đổi vị trí */
+.tab{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:transform .12s,box-shadow .12s}
+.tab.hold{transform:scale(1.06);box-shadow:0 6px 16px rgba(0,0,0,.25);position:relative;z-index:2}
+.tabs.drag .tab:not(.hold){opacity:.75}
 .tab .bd{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--up);margin-left:4px;vertical-align:1px}
 @media (max-width:440px){.tab{font-size:12px;padding:6px 2px}}
 </style>
@@ -136,7 +140,7 @@ label.chk input{width:22px;height:22px;flex:none;margin:0}
 <body>
 <main>
 <h1>Trading Lab</h1>
-<p class="sub">Mô phỏng phương pháp, trợ lý đặt lệnh trên sàn gộp lệnh, lọc sản phẩm theo phương pháp, giá trực tuyến và robot nhắc lệnh.</p>
+<p class="sub">Mô phỏng phương pháp, trợ lý đặt lệnh trên sàn gộp lệnh, lọc sản phẩm theo phương pháp, giá trực tuyến và robot nhắc lệnh. Giữ một tab rồi kéo để đổi vị trí.</p>
 <nav class="tabs"><button class="tab on" id="tbLab">Lab mô phỏng</button><button class="tab" id="tbGop">Trợ lý gộp lệnh</button><button class="tab" id="tbLoc">Lọc sản phẩm</button><button class="tab" id="tbLive">Giá trực tuyến</button><button class="tab" id="tbBot">Robot nhắc lệnh</button></nav>
 
 <div id="tabBot" hidden>
@@ -1352,6 +1356,7 @@ $('luse').onclick=()=>{if(!L.c.length){$('lerr').textContent='Chưa có nến n�
 function show(t){if(!['lab','gop','loc','gia','bot'].includes(t))t='lab';const live=t==='gia';
  [['lab','tabLab','tbLab'],['gop','tabGop','tbGop'],['loc','tabLoc','tbLoc'],['gia','tabLive','tbLive'],['bot','tabBot','tbBot']].forEach(([k,p,b])=>{$(p).hidden=k!==t;$(b).classList.toggle('on',k===t)});
  try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t)}catch(e){}
+ try{localStorage.setItem('tl_tab',t)}catch(e){}
  if(live){if(!K.done&&!K.busy)corr();if(!L.started){L.started=true;load()}else{if(!L.ws&&!L.rt)conn(L.gen,0);paint()}}else if(t==='lab'){if(window.tlLabSyms)window.tlLabSyms(L.sym);if(S)charts()}
  if(window.tlBotView)window.tlBotView(t==='bot')}
 window.tlShow=show;
@@ -1360,7 +1365,7 @@ addEventListener('hashchange',()=>show(location.hash.slice(1)));
 addEventListener('resize',paint);
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',paint);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){close();L.rt=0}else if(L.started&&!$('tabLive').hidden)load()});
-ui();show(location.hash.slice(1));
+ui();{let h=location.hash.slice(1);if(!h)try{h=localStorage.getItem('tl_tab')||''}catch(e){}show(h)}
 })();
 </script>
 
@@ -1616,10 +1621,48 @@ form();status();if(C.on){connect();wake()}
 </script>
 
 <script>
+/* ===== Giữ tab để kéo đổi vị trí =====
+   Giữ ngón tay trên một tab khoảng nửa giây cho tab nổi lên, rồi kéo sang trái/phải để đổi chỗ.
+   Thứ tự tab được lưu lại cho lần mở sau. Chạm nhanh vẫn chuyển tab như bình thường. */
+(()=>{
+const nav=document.querySelector('.tabs');if(!nav)return;
+const ids=()=>[...nav.querySelectorAll('.tab')].map(b=>b.id);
+try{const v=JSON.parse(localStorage.getItem('tl_tabs')||'[]');
+ if(Array.isArray(v))v.forEach(id=>{const b=document.getElementById(id);if(b&&b.parentNode===nav)nav.appendChild(b)});
+ /* Tab mới chưa có trong thứ tự đã lưu thì giữ nguyên ở cuối */
+}catch(e){}
+let tm=0,el=null,on=false,x0=0,y0=0,moved=false,eatClick=false;
+const stop=()=>{clearTimeout(tm);tm=0};
+function end(){stop();if(on){on=false;eatClick=true;setTimeout(()=>eatClick=false,350);
+  try{localStorage.setItem('tl_tabs',JSON.stringify(ids()))}catch(e){}}
+ if(el)el.classList.remove('hold');nav.classList.remove('drag');el=null}
+nav.addEventListener('pointerdown',e=>{const b=e.target.closest('.tab');if(!b||e.button>0)return;
+ el=b;x0=e.clientX;y0=e.clientY;moved=false;stop();
+ tm=setTimeout(()=>{tm=0;if(!el||moved)return;on=true;el.classList.add('hold');nav.classList.add('drag');
+  try{navigator.vibrate&&navigator.vibrate(15)}catch(_){}},450)});
+nav.addEventListener('pointermove',e=>{if(!el)return;
+ if(!on){if(Math.abs(e.clientX-x0)>8||Math.abs(e.clientY-y0)>8){moved=true;stop();el=null}return}
+ /* Tìm tab nằm dưới ngón tay rồi chèn tab đang kéo vào trước/sau nó */
+ const bs=[...nav.querySelectorAll('.tab')],x=e.clientX;
+ for(const b of bs){if(b===el)continue;const r=b.getBoundingClientRect();
+  if(x>=r.left&&x<=r.right){const i=bs.indexOf(b),j=bs.indexOf(el);
+   /* Dời tab bên cạnh (không dời tab đang giữ để không mất ngón tay đang kéo) */
+   if(j<i&&x>r.left+r.width/2)nav.insertBefore(b,el);
+   else if(j>i&&x<r.left+r.width/2)nav.insertBefore(b,el.nextSibling);break}}});
+['pointerup','pointercancel'].forEach(n=>nav.addEventListener(n,end));
+/* Khi đang kéo thì chặn cuộn trang trên iPhone */
+nav.addEventListener('touchmove',e=>{if(on)e.preventDefault()},{passive:false});
+nav.addEventListener('contextmenu',e=>{if(el||on)e.preventDefault()});
+/* Thả tay sau khi kéo thì không tính là chạm để chuyển tab */
+nav.addEventListener('click',e=>{if(eatClick){e.stopPropagation();e.preventDefault();eatClick=false}},true);
+})();
+</script>
+
+<script>
 /* ===== Tự cập nhật khi có bản mới trên GitHub Pages =====
    Mỗi lần sửa app phải đổi APP_VER. Khi mở app hoặc quay lại app, tải lại index.html (bỏ qua bộ nhớ đệm)
    để so phiên bản: vừa mở app thì tự tải lại; đang dùng thì hiện thanh báo để bạn chọn lúc cập nhật. */
-const APP_VER='2026-11-28.1';
+const APP_VER='2026-11-28.2';
 (()=>{
 let inFrame=true;try{inFrame=window.top!==window.self}catch(e){}
 if(!/^https?:$/.test(location.protocol)||inFrame)return;
