@@ -216,7 +216,7 @@ label.chk input{width:22px;height:22px;flex:none;margin:0}
 <section class="card">
 <div class="lhead">
  <div><span class="lsym" id="lname">BTCUSDT</span><span class="ldot" id="ldot"></span><span class="cap" id="lstat">Chưa kết nối</span><div class="cap" id="lhl"></div></div>
- <div class="lpx"><b id="lpx">–</b><div id="lchg" class="cap"></div><div class="cap" id="lvnd"></div></div>
+ <div class="lpx"><b id="lpx">–</b><div id="lchg" class="cap"></div></div>
 </div>
 <div class="grid">
  <label>Sản phẩm<select id="lsel"></select></label>
@@ -229,10 +229,9 @@ label.chk input{width:22px;height:22px;flex:none;margin:0}
 <div class="err" id="lerr"></div>
 </section>
 <section class="card">
-<h2>Quy đổi và dùng cho Lab</h2>
-<label>Tỷ giá quy đổi: 1 USDT = ? VND (để 0 thì không hiện giá VND)<input id="lrate" type="number" step="any" min="0" value="0"></label>
-<div class="row"><button id="luse">Đưa các nến đang xem vào Lab mô phỏng</button></div>
-<p class="cap" style="margin-top:10px">Nguồn giá: dữ liệu thị trường công khai của Binance, chỉ đọc giá, không giao dịch. Giá có thể khác sàn Việt Nam; giá VND chỉ là quy đổi theo tỷ giá bạn nhập. Bản lưu trong claude.ai không lấy được giá trực tuyến, hãy mở bản trên GitHub Pages.</p>
+<h2>Dùng cho Lab</h2>
+<div class="row" style="margin-top:0"><button id="luse">Đưa các nến đang xem vào Lab mô phỏng</button></div>
+<p class="cap" style="margin-top:10px">Nguồn giá: dữ liệu thị trường công khai của Binance, chỉ đọc giá, không giao dịch. Giá có thể khác sàn Việt Nam. Bản lưu trong claude.ai không lấy được giá trực tuyến, hãy mở bản trên GitHub Pages.</p>
 </section>
 <section class="card">
 <h2>Bản đồ tương quan</h2>
@@ -1253,22 +1252,22 @@ fill();
 const SY=LIVE_SY,TF=LIVE_TF;
 const REST=['https://data-api.binance.vision','https://api.binance.com'];
 const WSS=['wss://data-stream.binance.vision','wss://stream.binance.com:9443'];
-const L={sym:'BTCUSDT',tf:'15m',c:[],ws:null,rt:0,retry:0,gen:0,view:90,off:0,cross:-1,rate:0,tk:null,started:false,raf:0};
-try{const v=JSON.parse(localStorage.getItem('tl_live')||'{}');if(v.sym)L.sym=v.sym;if(v.tf)L.tf=v.tf;if(v.rate>0)L.rate=+v.rate}catch(e){}
-const keep=()=>{try{localStorage.setItem('tl_live',JSON.stringify({sym:L.sym,tf:L.tf,rate:L.rate}))}catch(e){}};
+const L={sym:'BTCUSDT',tf:'15m',c:[],ws:null,rt:0,retry:0,gen:0,view:90,off:0,cross:-1,tk:null,started:false,raf:0};
+try{const v=JSON.parse(localStorage.getItem('tl_live')||'{}');if(v.sym)L.sym=v.sym;if(v.tf)L.tf=v.tf}catch(e){}
+const keep=()=>{try{localStorage.setItem('tl_live',JSON.stringify({sym:L.sym,tf:L.tf}))}catch(e){}};
 const dp=p=>p>=1000?2:p>=10?3:p>=1?4:6;
 const pf=p=>fmt(p,dp(p));
 
 function ui(){
  const sel=$('lsel');sel.innerHTML=symOpts([L.sym]);sel.value=L.sym;
  $('ltf').innerHTML=TF.map(t=>`<button data-tf="${t[0]}" class="${t[0]==L.tf?'on':''}">${t[1]}</button>`).join('');
- $('lname').textContent=L.sym;$('lrate').value=L.rate||0}
+ $('lname').textContent=L.sym}
 function stat(t,c){$('lstat').textContent=t;$('ldot').className='ldot '+(c||'')}
 async function getJ(path){let e;for(const b of REST){try{const r=await fetch(b+path,{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);return await r.json()}catch(x){e=x}}throw e}
 function close(){clearTimeout(L.rt);L.rt=0;if(L.ws){const w=L.ws;L.ws=null;w.onclose=w.onerror=w.onmessage=null;try{w.close()}catch(e){}}}
 async function load(){
  const g=++L.gen;close();L.c=[];L.off=0;L.cross=-1;L.tk=null;L.retry=0;$('lerr').textContent='';
- $('lpx').textContent='–';$('lchg').textContent='';$('lhl').textContent='';$('lvnd').textContent='';
+ $('lpx').textContent='–';$('lchg').textContent='';$('lhl').textContent='';
  stat('Đang tải dữ liệu…','warn');ui();paint();
  try{const k=await getJ(`/api/v3/klines?symbol=${L.sym}&interval=${L.tf}&limit=500`);if(g!==L.gen)return;
   L.c=k.map(r=>({t:r[0],o:+r[1],h:+r[2],l:+r[3],c:+r[4]}));
@@ -1290,10 +1289,9 @@ function conn(g,i){if(g!==L.gen||document.hidden)return;
  ws.onerror=()=>{try{ws.close()}catch(e){}};
  ws.onclose=()=>{if(g!==L.gen||L.ws!==ws)return;L.ws=null;stat('Mất kết nối, đang kết nối lại…','warn');again(g,ok?i:i+1)}}
 function again(g,i){clearTimeout(L.rt);const w=Math.min(30000,1000*2**L.retry++);L.rt=setTimeout(()=>conn(g,i),w)}
-function price(p){const o=$('lpx'),prev=L.last;L.last=p;o.textContent=pf(p);o.className=prev==null||p==prev?'':p>prev?'pos':'neg';vnd();document.title=pf(p)+' · '+L.sym}
+function price(p){const o=$('lpx'),prev=L.last;L.last=p;o.textContent=pf(p);o.className=prev==null||p==prev?'':p>prev?'pos':'neg';document.title=pf(p)+' · '+L.sym}
 function tick(t){L.tk=t;const ch=t.o>0?(t.c/t.o-1)*100:0;$('lchg').innerHTML=`<span class="${cls(ch)}">${ch>0?'+':''}${fmt(ch,2)}%</span> trong 24 giờ`;
  $('lhl').textContent='24 giờ · cao '+pf(t.h)+' · thấp '+pf(t.l);if(L.last==null)price(t.c)}
-function vnd(){$('lvnd').textContent=L.rate>0&&L.last?'≈ '+fmt(L.last*L.rate,0)+' ₫ (theo tỷ giá bạn nhập)':''}
 
 /* ----- Vẽ biểu đồ nến ----- */
 let G=null;
@@ -1397,7 +1395,6 @@ $('lsel').onchange=()=>{L.sym=$('lsel').value;keep();load()};
 const go=()=>{const v=$('lcus').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');if(!/^[A-Z0-9]{5,20}$/.test(v)){$('lerr').textContent='Mã không hợp lệ. Ví dụ: ADAUSDT, DOGEUSDT.';return}L.sym=v;$('lcus').value='';keep();load();if(K.M&&!K.busy&&!K.syms.includes(v))corr()};
 $('lgo').onclick=go;$('lcus').onkeydown=e=>{if(e.key==='Enter')go()};
 $('lzi').onclick=()=>zoom(1/1.4);$('lzo').onclick=()=>zoom(1.4);$('lnow').onclick=()=>{L.off=0;L.cross=-1;paint()};
-$('lrate').oninput=()=>{const v=parseFloat($('lrate').value);L.rate=v>0?v:0;keep();vnd()};
 $('luse').onclick=()=>{if(!L.c.length){$('lerr').textContent='Chưa có nến nào để đưa vào Lab.';return}
  const end=L.c.length-L.off,B=L.c.slice(Math.max(0,end-Math.max(15,L.view)),end),p=v=>String(v).padStart(2,'0'),ts=t=>{const D=new Date(t);return D.getFullYear()+'-'+p(D.getMonth()+1)+'-'+p(D.getDate())+' '+p(D.getHours())+':'+p(D.getMinutes())};
  $('csv').value='time,open,high,low,close\n'+B.map(b=>[ts(b.t),b.o,b.h,b.l,b.c].join(',')).join('\n');
@@ -1713,7 +1710,7 @@ nav.addEventListener('click',e=>{if(eatClick){e.stopPropagation();e.preventDefau
 /* ===== Tự cập nhật khi có bản mới trên GitHub Pages =====
    Mỗi lần sửa app phải đổi APP_VER. Khi mở app hoặc quay lại app, tải lại index.html (bỏ qua bộ nhớ đệm)
    để so phiên bản: vừa mở app thì tự tải lại; đang dùng thì hiện thanh báo để bạn chọn lúc cập nhật. */
-const APP_VER='2026-11-28.6';
+const APP_VER='2026-11-28.7';
 (()=>{
 let inFrame=true;try{inFrame=window.top!==window.self}catch(e){}
 if(!/^https?:$/.test(location.protocol)||inFrame)return;
