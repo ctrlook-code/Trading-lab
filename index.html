@@ -53,6 +53,7 @@ ul{margin:6px 0 0;padding-left:18px;font-size:13px;color:var(--mu)}
 .lr.pb{border-left:3px dashed var(--dn);background:var(--bg)}.lr.pb em{color:var(--tx)}
 .lr.p0{background:rgba(34,197,94,.22)}
 .lr.now{background:var(--ac);color:#fff}.lr.now.p0{background:var(--up)}.lr.now span,.lr.now b,.lr.now em,.lr.now i{color:#fff!important}.lr span{white-space:nowrap}
+.lr.now span{width:auto;min-width:64px}
 [hidden]{display:none!important}
 /* Thanh báo có bản mới */
 #upd{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:20;display:flex;gap:10px;align-items:center;max-width:560px;margin:0 auto;padding:10px 12px;background:var(--card);color:var(--tx);border:1px solid var(--ac);border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.18);font-size:14px}
@@ -604,6 +605,49 @@ const METHODS={buygrid:{name:'Only buy grid',tag:'Lưới · chỉ BUY · spot',
  {k:'cap',l:'Vốn tham chiếu để tính % sụt giảm (0 = bỏ qua)',v:0}]}};
 METHODS.buyrb={name:'Only buy grid · Mua khi hồi',tag:'Lưới · chỉ BUY · spot · mua khi giá tăng',desc:'Giống PP1: Only buy grid nhưng khi giá giảm xuống một mắc thì không mua. Chỉ mua khi giá đi lên chạm mắc chưa có lệnh. Cách cắt lệnh giữ nguyên.',make:(p,a)=>makeBuyGrid(p,a,true),params:METHODS.buygrid.params};
 METHODS.buyrb.notes=['Lệnh mua và lệnh cắt đều khớp đúng tại giá mắc lưới. Mỗi mắc tối đa 1 lệnh.','Giá đi xuống chạm một mắc: không mua, cứ để giá giảm. Giá đi lên chạm một mắc chưa có lệnh: mua 1 lệnh tại mắc đó. Mắc đã có lệnh thì không mua thêm. Lúc bắt đầu tại giá khởi tạo chưa mua.','Quy tắc cắt giống PP1: Only buy grid và vẫn được xét tại mọi mắc (kể cả khi giá đi xuống): lệnh cao nhất đang lỗ thì cắt cùng số lệnh thấp nhất đang lãi ít nhất sao cho tổng dương, lặp lại đến khi không cắt được.','Không chốt lời riêng từng lệnh và không cắt lỗ theo giá.','Mục đích: vốn chiếm dụng thấp hơn khi giá giảm, để dành vốn cho sản phẩm khác (ví dụ sản phẩm tương quan nghịch). Đổi lại bỏ lỡ các mắc đáy đã đi qua.','Chưa xác nhận: giới hạn số lệnh hoặc vốn; việc cắt khi giá đang giảm; tên phương pháp là tên tạm.'];
+/* ===== PP5: Only sell grid (ngược PP1) và PP6: Buy + Sell grid (PP1 và PP5 chạy chung trên cùng mắc lưới) =====
+   sides = [-1]: chỉ SELL · [1,-1]: cả BUY và SELL. Mỗi chiều có sổ lệnh riêng và cắt theo quy tắc của chiều đó.
+   Hàm riêng, không sửa makeBuyGrid của PP1. */
+function makeSideGrid(p,a,sides){
+ const st=p.mode=='pct'?a*p.step/100:p.step,eps=1e-9,q=p.qty,two=sides.length>1;
+ if(!(st>0))throw Error('Khoảng cách lưới phải lớn hơn 0.');
+ if(!(q>0))throw Error('Số lượng mỗi lệnh phải lớn hơn 0.');
+ const s={a,st,p,x:a,open:new Map(),pr:[],eq:[],rl:[],ev:[],real:0,cyc:0,peak:0,dd:0,maxOpen:0,maxNot:0,not:0,worst:0,fl:0};
+ const B={'1':new Map(),'-1':new Map()},W=d=>d>0?'BUY':'SELL',id=(k,d)=>two?2*k+(d>0?1:0):k;
+ const upd=x=>{let fl=0;for(const P of s.open.values())fl+=(x-P.e)*P.d*q;s.fl=fl;const e=s.real+fl;
+  s.peak=Math.max(s.peak,e);s.dd=Math.max(s.dd,s.peak-e);s.worst=Math.min(s.worst,fl);s.maxOpen=Math.max(s.maxOpen,s.open.size);s.maxNot=Math.max(s.maxNot,s.not);return e};
+ /* Cắt theo quy tắc PP1, soi gương cho SELL: lệnh tệ nhất (BUY ở mắc cao nhất / SELL ở mắc thấp nhất) đang lỗ
+    thì cắt cùng ít lệnh lãi nhiều nhất (BUY thấp nhất / SELL cao nhất) sao cho tổng dương; lặp đến khi không cắt được. */
+ const cut=(d,pv,i)=>{const M=B[d],pl=k=>(pv-M.get(k))*d;
+  for(;;){if(M.size<2)break;const ks=[...M.keys()].sort((u,v)=>d*(u-v));
+   const kt=ks[ks.length-1],lt=pl(kt);if(!(lt<-eps))break;
+   let sum=lt,ch=[];
+   for(let j=0;j<ks.length-1;j++){const r=pl(ks[j]);if(!(r>eps))break;sum+=r;ch.push(ks[j]);if(sum>eps)break}
+   if(!(sum>eps))break;
+   ch.push(kt);LG(s,{i,t:'Cắt '+W(d),x:pv,q:ch.length*q,pl:sum*q,n:'lệnh '+W(d)+' vào ở '+ch.map(k=>fmt(M.get(k),5)).join(', ')});
+   ch.forEach(k=>{s.not-=M.get(k)*q;M.delete(k);s.open.delete(id(k,d))});
+   s.real+=sum*q;s.cyc++;s.ev.push({i,x:pv,o:d>0?0:1})}};
+ const step=(k,i)=>{const pv=a+k*st;
+  for(const d of sides){const M=B[d];
+   if(!M.has(k)&&!(p.max>0&&M.size>=p.max)){M.set(k,pv);s.open.set(id(k,d),{e:pv,k,d});s.not+=pv*q;s.ev.push({i,x:pv,o:d>0?1:0});LG(s,{i,t:W(d),x:pv,q,n:'mắc '+k})}}
+  for(const d of sides)cut(d,pv,i);
+  upd(pv)};
+ s.lvKeys=()=>[...new Set([...B['1'].keys(),...B['-1'].keys()])];
+ s.lvT=k=>{const t=[];for(const d of sides){const M=B[d];if(M.has(k)){const f=(s.x-M.get(k))*d*q;t.push(`${W(d)} · <i class="${cls(f)}" style="font-style:normal">${fmt(f)}</i>`)}}
+  return t.length?{on:true,t:t.join(' · ')}:{on:false,t:'chạm sẽ '+sides.map(W).join(' + ')}};
+ if(two)s.extra=()=>{const nb=B['1'].size,ns=B['-1'].size;return[['Lệnh BUY đang mở',fmt(nb,0),''],['Lệnh SELL đang mở',fmt(ns,0),''],['Vị thế ròng (số lượng)',fmt((nb-ns)*q),'']]};
+ s.feed=x=>{const i=s.pr.length;
+  if(i){const p0=s.x,ks=[];
+   if(x>p0+eps*st){for(let k=Math.floor((p0-a)/st+eps)+1,h=Math.floor((x-a)/st+eps);k<=h;k++)ks.push(k)}
+   else if(x<p0-eps*st){for(let k=Math.ceil((p0-a)/st-eps)-1,l=Math.ceil((x-a)/st-eps);k>=l;k--)ks.push(k)}
+   if(ks.length>5000)throw Error('Quá nhiều mức lưới (>5000). Hãy tăng khoảng cách lưới.');
+   for(const k of ks)step(k,i)}
+  const e=upd(x);s.x=x;s.pr.push(x);s.eq.push(e);s.rl.push(s.real)};
+ s.feed(a);return s}
+METHODS.sellgrid={name:'Only sell grid',tag:'Lưới · chỉ SELL · CFD (bán khống)',spot:false,desc:'Ngược với PP1: mỗi mắc lưới mà giá chạm tới (lên hay xuống) mở 1 lệnh SELL, tối đa 1 lệnh mỗi mắc. Khi lệnh SELL ở mắc thấp nhất đang lỗ, cắt nó cùng các lệnh SELL cao nhất đang lãi sao cho tổng dương. Không chốt lời riêng từng lệnh.',make:(p,a)=>makeSideGrid(p,a,[-1]),params:METHODS.buygrid.params};
+METHODS.sellgrid.notes=['Giao dịch CFD: cho phép bán khống (SELL). Chưa tính ký quỹ, đòn bẩy, phí, spread và phí qua đêm.','Lệnh SELL và lệnh cắt đều khớp đúng tại giá mắc lưới. Mỗi mắc tối đa 1 lệnh SELL. Giá chạm một mắc chưa có lệnh (đi lên hay đi xuống) thì mở 1 lệnh SELL tại mắc đó; tại giá khởi tạo lúc bắt đầu chưa mở.','Quy tắc cắt là PP1 soi gương: lệnh SELL lãi khi giá xuống dưới giá vào. Khi lệnh SELL ở mắc thấp nhất đang lỗ (giá đã lên trên nó), cắt nó cùng số lệnh SELL cao nhất (lãi nhiều nhất) ít nhất sao cho tổng lãi/lỗ của nhóm cắt dương, lặp lại đến khi không cắt được nữa.','Không chốt lời riêng từng lệnh và không cắt lỗ theo giá. Rủi ro khi giá tăng kéo dài: ôm nhiều lệnh SELL lỗ và về lý thuyết lỗ không giới hạn.','Vốn chiếm dụng = tổng giá trị (giá vào × số lượng) các lệnh SELL đang mở. “Tối đa lệnh mở” chỉ dừng mở SELL khi đạt giới hạn. Trên biểu đồ giá: chấm xanh là mở SELL, chấm đỏ là cắt (mua lại).','Chưa xác nhận: tên phương pháp là tên tạm.'];
+METHODS.bothgrid={name:'Buy + Sell grid',tag:'Lưới · BUY + SELL cùng mắc · CFD',spot:false,desc:'Chạy PP1 và PP5 cùng lúc trên một lưới: mỗi mắc giá chạm tới mở 1 BUY và 1 SELL (nếu mắc đó chưa có lệnh chiều đó). Lệnh BUY cắt theo quy tắc PP1, lệnh SELL cắt theo quy tắc PP5, hai chiều tính riêng.',make:(p,a)=>makeSideGrid(p,a,[1,-1]),params:METHODS.buygrid.params.map(q=>q.k=='max'?{...q,l:'Tối đa lệnh mở mỗi chiều (0 = không giới hạn)'}:q)};
+METHODS.bothgrid.notes=['Giao dịch CFD: cho phép bán khống (SELL) và giữ BUY, SELL cùng lúc. Chưa tính ký quỹ, đòn bẩy, phí, spread và phí qua đêm.','Giá chạm một mắc (đi lên hay đi xuống): mở 1 BUY nếu mắc đó chưa có BUY, và mở 1 SELL nếu mắc đó chưa có SELL. Tại giá khởi tạo lúc bắt đầu chưa mở.','Lệnh BUY cắt theo quy tắc PP1 (BUY cao nhất đang lỗ thì cắt cùng các BUY thấp nhất đang lãi sao cho tổng dương). Lệnh SELL cắt theo quy tắc PP5 (SELL thấp nhất đang lỗ thì cắt cùng các SELL cao nhất đang lãi). Không cắt chéo giữa BUY và SELL.','Vì hai chiều tính riêng, lãi đã chốt bằng PP1 cộng PP5 trên cùng dữ liệu. Khác biệt nằm ở thả nổi, sụt giảm và vị thế ròng được tính gộp: BUY và SELL ở cùng mắc bù trừ nhau.','Vốn chiếm dụng = tổng giá trị (giá vào × số lượng) của mọi lệnh BUY và SELL đang mở (giá trị danh nghĩa, chưa bù trừ). “Tối đa lệnh mở” áp dụng cho từng chiều.','Chưa xác nhận: tên phương pháp là tên tạm.'];
 const NO=k=>Object.keys(METHODS).indexOf(k)+1;
 const COMMON=['Giao dịch spot: không đòn bẩy, không bán khống. Không tính phí, spread, trượt giá.','Chế độ tự động: mỗi nến đi theo đường O→L→H→C (nến tăng) hoặc O→H→L→C (nến giảm). Dãy giá thì mỗi số là một điểm giá.','Chế độ bấm tay: mỗi lần bấm giá di chuyển đúng một khoảng lưới từ vị trí hiện tại. Hoàn tác lùi lại một thao tác.','Giá nhảy qua nhiều mắc trong một lần: xử lý lần lượt từng mắc theo hướng giá đi. Giá nằm giữa hai mắc: không có hành động, chỉ cập nhật lãi/lỗ thả nổi.','Dữ liệu cho Lab: tải lịch sử giá từ Binance ở mục 1, dán, nạp file, hoặc lấy nến thật từ tab “Giá trực tuyến” (tải từ Binance chỉ chạy ở bản trên GitHub Pages).'];
 METHODS.buygrid.notes=['Lệnh mua và lệnh cắt đều khớp đúng tại giá mắc lưới.','Mỗi mắc tối đa 1 lệnh. Giá chạm một mắc chưa có lệnh (đi lên hay đi xuống) thì mua 1 lệnh tại mắc đó; tại giá khởi tạo lúc bắt đầu chưa mua.','Quy tắc cắt: khi lệnh ở mắc cao nhất đang lỗ, cắt nó cùng số lệnh thấp nhất (lãi nhiều nhất) ít nhất sao cho tổng lãi/lỗ của nhóm cắt dương, lặp lại đến khi không cắt được nữa.','Không chốt lời riêng từng lệnh và không cắt lỗ theo giá.','Vốn chiếm dụng = tổng giá trị (giá vào × số lượng) các lệnh đang mở. “Vốn tham chiếu” chỉ dùng để tính % sụt giảm.','Chưa xác minh: giới hạn số lệnh hoặc vốn. Thông số “Tối đa lệnh mở” hiện chỉ dừng mua khi đạt giới hạn.'];
@@ -989,7 +1033,9 @@ const HINT={
  buygrid:{tr:'side',t:'Sản phẩm đi ngang, giá dao động lên xuống nhiều lần quanh một vùng (chạm mắc nhiều). Kém khi giá giảm kéo dài vì ôm nhiều lệnh lỗ.'},
  infinity:{tr:'side',t:'Sản phẩm đi ngang, giá cuối gần giá đầu, dao động đều. Kém khi giá giảm sâu kéo dài (hết tiền mặt) hoặc tăng một chiều mạnh (bán hết phần ban đầu sớm).'},
  momentum:{tr:'trend',t:'Sản phẩm có xu hướng rõ, đi một chiều mạnh (lên hoặc xuống). Kém khi giá đi ngang giật qua lại vì số lệnh mỗi mắc tăng dần.'},
- buyrb:{tr:'sideup',t:'Sản phẩm đi ngang hoặc đang tăng. Đỡ hơn PP1 khi giá giảm vì không mua lúc giá đi xuống, nhưng bỏ lỡ các mắc đáy.'}};
+ buyrb:{tr:'sideup',t:'Sản phẩm đi ngang hoặc đang tăng. Đỡ hơn PP1 khi giá giảm vì không mua lúc giá đi xuống, nhưng bỏ lỡ các mắc đáy.'},
+ sellgrid:{tr:'side',t:'Sản phẩm đi ngang hoặc đang giảm, giá dao động lên xuống nhiều lần quanh một vùng. Kém khi giá tăng kéo dài vì ôm nhiều lệnh SELL lỗ.'},
+ bothgrid:{tr:'side',t:'Sản phẩm đi ngang, chạm mắc nhiều lần theo cả hai chiều. Khi giá đi một chiều kéo dài, một chiều chốt lời còn chiều kia ôm lệnh lỗ.'}};
 /* Mã tiền mặt ổn định: bỏ khỏi danh sách “giao dịch nhiều nhất” */
 const STABLE=/^(USDC|FDUSD|TUSD|BUSD|DAI|USDP|USDE|PYUSD|USD1|BFUSD|RLUSD|XUSD|AEUR|EUR|EURI|GBP|TRY|BRL|USDS|UST|USTC|PAX|SUSD|GUSD)$/;
 const KEYS=Object.keys(METHODS),NM=k=>'PP'+(KEYS.indexOf(k)+1),SN=k=>NM(k)+': '+METHODS[k].name.split(' (')[0];
@@ -1662,7 +1708,7 @@ nav.addEventListener('click',e=>{if(eatClick){e.stopPropagation();e.preventDefau
 /* ===== Tự cập nhật khi có bản mới trên GitHub Pages =====
    Mỗi lần sửa app phải đổi APP_VER. Khi mở app hoặc quay lại app, tải lại index.html (bỏ qua bộ nhớ đệm)
    để so phiên bản: vừa mở app thì tự tải lại; đang dùng thì hiện thanh báo để bạn chọn lúc cập nhật. */
-const APP_VER='2026-11-28.2';
+const APP_VER='2026-11-28.3';
 (()=>{
 let inFrame=true;try{inFrame=window.top!==window.self}catch(e){}
 if(!/^https?:$/.test(location.protocol)||inFrame)return;
