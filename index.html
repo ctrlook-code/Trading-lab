@@ -89,6 +89,14 @@ button.x{background:transparent;color:var(--dn);border:1px solid var(--dn)}
 .tfs button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
 #lc{height:min(60vh,420px);touch-action:pan-y;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
 .ins{display:flex;gap:6px}.ins button{flex:none}
+/* Chỉ báo kỹ thuật (tab Giá trực tuyến) */
+.inds{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+.inds button{flex:1 1 64px;white-space:nowrap;min-height:36px;padding:6px 4px;font-size:13px;background:var(--bg);color:var(--tx);border:1px solid var(--bd)}
+.inds button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.inds button i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:0}
+#lindD{margin-top:10px;border:1px solid var(--bd);border-radius:8px;padding:8px 10px}
+#lindD summary{cursor:pointer;font-weight:600;font-size:14px}
+#lindD .grid{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));margin-top:10px}
 @media (max-width:440px){.tabs{gap:4px}.tab{font-size:13px;padding:6px 3px;line-height:1.25}}
 /* Lọc sản phẩm */
 label.chk{flex-direction:row;align-items:center;gap:10px;margin-top:10px;font-size:13.5px;color:var(--tx)}
@@ -223,9 +231,34 @@ label.chk input{width:22px;height:22px;flex:none;margin:0}
  <label>Mã khác (theo Binance, ví dụ ADAUSDT)<span class="ins"><input id="lcus" placeholder="Nhập mã" autocapitalize="characters" autocomplete="off"><button id="lgo">Mở</button></span></label>
 </div>
 <div class="tfs" id="ltf"></div>
+<div class="inds" id="lind"></div>
 <canvas id="lc"></canvas>
 <div class="row"><button class="s" id="lzi">＋ Phóng to</button><button class="s" id="lzo">－ Thu nhỏ</button><button class="s" id="lnow">⏭ Về hiện tại</button></div>
-<p class="cap" style="margin-top:8px">Kéo ngang để xem nến cũ · chạm vào nến để xem giá mở/cao/thấp/đóng · chạm lại để ẩn.</p>
+<p class="cap" style="margin-top:8px">Kéo ngang để xem nến cũ · chạm vào nến để xem giá mở/cao/thấp/đóng và giá trị chỉ báo · chạm lại để ẩn. Bấm tên chỉ báo phía trên biểu đồ để bật/tắt.</p>
+<details id="lindD"><summary>Thông số và cách đọc chỉ báo</summary>
+<div class="grid">
+ <label>MA nhanh (số nến)<input id="li_ma1" type="number" min="1" max="500" step="1" inputmode="numeric"></label>
+ <label>MA chậm (số nến)<input id="li_ma2" type="number" min="1" max="500" step="1" inputmode="numeric"></label>
+ <label>EMA nhanh (số nến)<input id="li_ema1" type="number" min="1" max="500" step="1" inputmode="numeric"></label>
+ <label>EMA chậm (số nến)<input id="li_ema2" type="number" min="1" max="500" step="1" inputmode="numeric"></label>
+ <label>Bollinger: số nến<input id="li_bbn" type="number" min="2" max="500" step="1" inputmode="numeric"></label>
+ <label>Bollinger: số độ lệch chuẩn<input id="li_bbk" type="number" min="0.1" max="5" step="0.1" inputmode="decimal"></label>
+ <label>RSI: số nến<input id="li_rsi" type="number" min="2" max="500" step="1" inputmode="numeric"></label>
+ <label>MACD: EMA nhanh<input id="li_mf" type="number" min="1" max="500" step="1" inputmode="numeric"></label>
+ <label>MACD: EMA chậm<input id="li_ms" type="number" min="1" max="500" step="1" inputmode="numeric"></label>
+ <label>MACD: đường tín hiệu<input id="li_mg" type="number" min="1" max="500" step="1" inputmode="numeric"></label>
+</div>
+<div class="row"><button class="s" id="li_def">Về thông số mặc định</button></div>
+<ul>
+<li><b>MA</b> (trung bình động đơn giản): giá đóng trung bình của N nến gần nhất, làm mượt giá để thấy xu hướng. Giá nằm trên MA thường là xu hướng tăng, dưới MA là xu hướng giảm. MA nhanh cắt lên MA chậm thường được xem là dấu hiệu tăng, cắt xuống là dấu hiệu giảm.</li>
+<li><b>EMA</b> (trung bình động hàm mũ): giống MA nhưng nến gần đây có trọng số lớn hơn, nên phản ứng nhanh hơn với giá mới.</li>
+<li><b>Bollinger</b>: đường giữa là MA, hai dải trên và dưới cách đường giữa một số lần độ lệch chuẩn (mặc định 2). Dải hẹp lại là giá đang tích lũy, ít biến động; dải mở rộng là biến động tăng. Giá chạm dải trên hoặc dải dưới cho biết giá đang ở vùng cao hoặc thấp so với gần đây.</li>
+<li><b>Khối lượng</b>: số lượng sản phẩm được giao dịch trong mỗi nến (cột xanh: nến tăng, cột đỏ: nến giảm). Giá đi kèm khối lượng lớn thường đáng tin hơn.</li>
+<li><b>RSI</b> (chỉ số sức mạnh tương đối, 0–100): so sánh mức tăng và mức giảm gần đây. Trên 70 thường được xem là đã tăng nhiều (quá mua), dưới 30 là đã giảm nhiều (quá bán).</li>
+<li><b>MACD</b>: đường MACD = EMA nhanh − EMA chậm; đường tín hiệu = EMA của đường MACD; cột = MACD − tín hiệu. MACD cắt lên đường tín hiệu (cột chuyển dương) thường được xem là đà tăng mạnh lên, cắt xuống là đà giảm. MACD trên 0 là EMA nhanh nằm trên EMA chậm.</li>
+<li>Chỉ báo tính trên các nến đã tải (tối đa 500 nến khi mở, cộng thêm nến mới khi cập nhật trực tiếp). Nến đầu tiên chưa đủ dữ liệu thì chưa có giá trị. Chỉ báo chỉ để tham khảo, không phải tín hiệu mua bán.</li>
+</ul>
+</details>
 <p class="cap">Nguồn giá: dữ liệu thị trường công khai của Binance, chỉ đọc giá, không giao dịch. Giá có thể khác sàn Việt Nam. Bản lưu trong claude.ai không lấy được giá trực tuyến, hãy mở bản trên GitHub Pages.</p>
 <div class="err" id="lerr"></div>
 </section>
@@ -1266,7 +1299,7 @@ async function load(){
  $('lpx').textContent='–';$('lchg').textContent='';$('lhl').textContent='';
  stat('Đang tải dữ liệu…','warn');ui();paint();
  try{const k=await getJ(`/api/v3/klines?symbol=${L.sym}&interval=${L.tf}&limit=500`);if(g!==L.gen)return;
-  L.c=k.map(r=>({t:r[0],o:+r[1],h:+r[2],l:+r[3],c:+r[4]}));
+  L.c=k.map(r=>({t:r[0],o:+r[1],h:+r[2],l:+r[3],c:+r[4],v:+r[5]}));
   const z=L.c[L.c.length-1];if(z)price(z.c);paint()}
  catch(e){if(g!==L.gen)return;stat('Không tải được dữ liệu','bad');
   $('lerr').textContent='Không lấy được giá. Nếu bạn đang mở bản lưu trong claude.ai thì bản này không được phép kết nối ra ngoài, hãy mở bản trên GitHub Pages. Nếu không, hãy kiểm tra mạng hoặc mã sản phẩm (ví dụ BTCUSDT). Chi tiết: '+e.message;return}
@@ -1278,7 +1311,7 @@ function conn(g,i){if(g!==L.gen||document.hidden)return;
  L.ws=ws;
  ws.onopen=()=>{ok=true;L.retry=0;stat('Đang cập nhật trực tiếp','ok')};
  ws.onmessage=ev=>{if(g!==L.gen)return;let m;try{m=JSON.parse(ev.data)}catch(e){return}const d=m.data||m;
-  if(d.e==='kline'){const k=d.k,b={t:k.t,o:+k.o,h:+k.h,l:+k.l,c:+k.c},z=L.c[L.c.length-1];
+  if(d.e==='kline'){const k=d.k,b={t:k.t,o:+k.o,h:+k.h,l:+k.l,c:+k.c,v:+k.v},z=L.c[L.c.length-1];
    if(z&&z.t===b.t)L.c[L.c.length-1]=b;else if(!z||b.t>z.t){L.c.push(b);if(L.off>0)L.off++;if(L.c.length>2000)L.c.shift()}
    price(b.c);paint()}
   else if(d.e==='24hrMiniTicker')tick({c:+d.c,o:+d.o,h:+d.h,l:+d.l})};
@@ -1292,14 +1325,59 @@ function tick(t){L.tk=t;const ch=t.o>0?(t.c/t.o-1)*100:0;$('lchg').innerHTML=`<s
 /* ----- Vẽ biểu đồ nến ----- */
 let G=null;
 function paint(){if(L.raf)return;L.raf=requestAnimationFrame(()=>{L.raf=0;drawC()})}
-function drawC(){const cv=$('lc');if($('tabLive').hidden)return;const W=cv.clientWidth,H=cv.clientHeight;if(!W||!H)return;
+/* ----- Chỉ báo kỹ thuật: MA, EMA, Bollinger (trên biểu đồ giá) · Khối lượng, RSI, MACD (khung riêng) ----- */
+const IND=[['ma','MA','#f59e0b'],['ema','EMA','#0ea5e9'],['bb','Bollinger','#8b93a6'],['vol','Khối lượng','#94a3b8'],['rsi','RSI','#a855f7'],['macd','MACD','#0ea5e9']];
+const IDEF={ma1:20,ma2:50,ema1:9,ema2:21,bbn:20,bbk:2,rsi:14,mf:12,ms:26,mg:9};
+const IC={ma1:'#f59e0b',ma2:'#a855f7',ema1:'#0ea5e9',ema2:'#ec4899',bb:'#8b93a6',rsi:'#a855f7',macd:'#0ea5e9',sig:'#f59e0b'};
+const IP={on:{ma:true,vol:true},...IDEF};
+try{const v=JSON.parse(localStorage.getItem('tl_ind')||'{}');if(v.on&&typeof v.on=='object')IP.on=v.on;for(const k in IDEF)if(v[k]>0)IP[k]=+v[k]}catch(e){}
+const keepI=()=>{try{localStorage.setItem('tl_ind',JSON.stringify(IP))}catch(e){}};
+function sma(a,n){const o=Array(a.length).fill(null);let s=0;for(let i=0;i<a.length;i++){s+=a[i];if(i>=n)s-=a[i-n];if(i>=n-1)o[i]=s/n}return o}
+/* EMA khởi đầu bằng trung bình đơn giản của n giá trị đầu tiên; bỏ qua các giá trị chưa có ở đầu dãy */
+function ema(a,n){const o=Array(a.length).fill(null),k=2/(n+1);let s=0,c=0,e=null;
+ for(let i=0;i<a.length;i++){const v=a[i];if(v==null)continue;if(e==null){s+=v;c++;if(c==n){e=s/n;o[i]=e}}else{e=v*k+e*(1-k);o[i]=e}}return o}
+/* RSI theo cách làm mượt của Wilder */
+function rsiOf(a,n){const o=Array(a.length).fill(null);let g=0,l=0;
+ for(let i=1;i<a.length;i++){const d=a[i]-a[i-1],u=d>0?d:0,w=d<0?-d:0;
+  if(i<=n){g+=u;l+=w;if(i==n){g/=n;l/=n;o[i]=l==0?(g==0?50:100):100-100/(1+g/l)}}
+  else{g=(g*(n-1)+u)/n;l=(l*(n-1)+w)/n;o[i]=l==0?(g==0?50:100):100-100/(1+g/l)}}return o}
+function calcInd(C){const c=C.map(b=>b.c),I={};
+ if(IP.on.ma){I.ma1=sma(c,IP.ma1);I.ma2=sma(c,IP.ma2)}
+ if(IP.on.ema){I.ema1=ema(c,IP.ema1);I.ema2=ema(c,IP.ema2)}
+ if(IP.on.bb){const n=IP.bbn,m=sma(c,n);I.bbm=m;I.bbu=Array(c.length).fill(null);I.bbd=Array(c.length).fill(null);
+  for(let i=n-1;i<c.length;i++){let q=0;for(let j=i-n+1;j<=i;j++)q+=(c[j]-m[i])**2;const sd=Math.sqrt(q/n);I.bbu[i]=m[i]+IP.bbk*sd;I.bbd[i]=m[i]-IP.bbk*sd}}
+ if(IP.on.rsi)I.rsi=rsiOf(c,IP.rsi);
+ if(IP.on.macd){const f=ema(c,IP.mf),sl=ema(c,IP.ms),m=c.map((_,i)=>f[i]!=null&&sl[i]!=null?f[i]-sl[i]:null),sg=ema(m,IP.mg);
+  I.macd=m;I.sig=sg;I.hist=m.map((v,i)=>v!=null&&sg[i]!=null?v-sg[i]:null)}
+ return I}
+const fv=v=>v>=1e9?fmt(v/1e9,2)+' tỷ':v>=1e6?fmt(v/1e6,2)+' tr':v>=1e3?fmt(v/1e3,1)+' N':fmt(v,2);
+function indUI(){$('lind').innerHTML=IND.map(([k,t,c])=>`<button data-i="${k}" class="${IP.on[k]?'on':''}"><i style="background:${c}"></i>${t}</button>`).join('');
+ for(const k in IDEF)$('li_'+k).value=IP[k]}
+$('lind').onclick=e=>{const b=e.target.closest('button[data-i]');if(!b)return;IP.on[b.dataset.i]=!IP.on[b.dataset.i];keepI();indUI();paint()};
+for(const k in IDEF)$('li_'+k).onchange=()=>{let v=parseFloat($('li_'+k).value);
+ if(k=='bbk')v=v>0?Math.min(5,Math.max(.1,v)):IDEF[k];else v=v>0?Math.min(500,Math.max(k=='bbn'||k=='rsi'?2:1,Math.round(v))):IDEF[k];
+ IP[k]=v;$('li_'+k).value=v;keepI();paint()};
+$('li_def').onclick=()=>{Object.assign(IP,IDEF);keepI();indUI();paint()};
+indUI();
+
+function drawC(){const cv=$('lc');if($('tabLive').hidden)return;const W=cv.clientWidth;if(!W)return;
+ /* Mỗi khung chỉ báo riêng (khối lượng, RSI, MACD) nằm dưới biểu đồ giá, cao thêm SUBH */
+ const subs=['vol','rsi','macd'].filter(k=>IP.on[k]),SUBH=W<420?80:96,want=Math.round(Math.min(innerHeight*.6,420))+subs.length*SUBH;
+ if(cv.style.height!==want+'px')cv.style.height=want+'px';
+ const H=cv.clientHeight;if(!H)return;
  const d=devicePixelRatio||1;cv.width=W*d;cv.height=H*d;const g=cv.getContext('2d');g.scale(d,d);
  const cs=getComputedStyle(document.documentElement),gv=k=>cs.getPropertyValue(k).trim(),C=L.c;
  g.font='11px system-ui';g.textBaseline='middle';
  if(!C.length){g.fillStyle=gv('--mu');g.fillText('Chưa có dữ liệu',12,20);G=null;return}
- const R=W<420?54:66,T=10,Bt=22,cw=W-R,ch=H-T-Bt;
  const n=Math.max(15,Math.min(L.view,500)),end=C.length-L.off,st=Math.max(0,end-n),vis=C.slice(st,end),sh=n-vis.length;
+ /* Cột trục giá bên phải nới theo độ dài con số để không bị cắt */
+ let mxp=0;for(const b of vis)if(b.h>mxp)mxp=b.h;const R=Math.max(W<420?54:66,Math.ceil(g.measureText(fmt(mxp*1.05,dp(mxp))).width)+12),T=10,Bt=22,cw=W-R,ch=H-T-Bt-subs.length*SUBH,pb=T+ch,bot=H-Bt;
+ const I=calcInd(C),OV=[];
+ if(IP.on.ma)OV.push(['MA'+IP.ma1,I.ma1,IC.ma1],['MA'+IP.ma2,I.ma2,IC.ma2]);
+ if(IP.on.ema)OV.push(['EMA'+IP.ema1,I.ema1,IC.ema1],['EMA'+IP.ema2,I.ema2,IC.ema2]);
+ if(IP.on.bb)OV.push(['BB trên',I.bbu,IC.bb],['BB giữa',I.bbm,IC.bb],['BB dưới',I.bbd,IC.bb]);
  let lo=Infinity,hi=-Infinity;for(const b of vis){if(b.l<lo)lo=b.l;if(b.h>hi)hi=b.h}
+ for(const o of OV)for(let i=st;i<end;i++){const v=o[1][i];if(v!=null){if(v<lo)lo=v;if(v>hi)hi=v}}
  if(L.last&&L.off==0){lo=Math.min(lo,L.last);hi=Math.max(hi,L.last)}
  if(hi==lo){hi*=1.001;lo*=.999}const pd=(hi-lo)*.07;hi+=pd;lo-=pd;
  const y=v=>T+ch*(1-(v-lo)/(hi-lo)),bw=cw/n,x=i=>(i+sh+.5)*bw,dc=dp(hi);
@@ -1308,17 +1386,53 @@ function drawC(){const cv=$('lc');if($('tabLive').hidden)return;const W=cv.clien
  for(let j=0;j<=4;j++){const v=lo+(hi-lo)*(j+.5)/5,yy=Math.round(y(v))+.5;g.beginPath();g.moveTo(0,yy);g.lineTo(cw,yy);g.stroke();g.fillText(fmt(v,dc),cw+5,yy)}
  const day=L.tf=='1d',lab=t=>{const D=new Date(t),p=v=>String(v).padStart(2,'0');return day?p(D.getDate())+'/'+p(D.getMonth()+1):p(D.getHours())+':'+p(D.getMinutes())},every=Math.max(1,Math.round(80/bw));
  g.textAlign='center';
- vis.forEach((b,i)=>{if((st+i)%every)return;const xx=Math.round(x(i))+.5;g.strokeStyle=gv('--bd');g.beginPath();g.moveTo(xx,T);g.lineTo(xx,T+ch);g.stroke();g.fillText(lab(b.t),xx,H-Bt/2)});
+ vis.forEach((b,i)=>{if((st+i)%every)return;const xx=Math.round(x(i))+.5;g.strokeStyle=gv('--bd');g.beginPath();g.moveTo(xx,T);g.lineTo(xx,bot);g.stroke();g.fillText(lab(b.t),xx,H-Bt/2)});
  const bd=Math.max(1,Math.min(14,bw*.7)),up=gv('--up'),dn=gv('--dn');
+ /* Dải Bollinger tô nền mờ, vẽ trước nến */
+ const line=(arr,c,yf,w)=>{g.strokeStyle=c;g.lineWidth=w||1.4;g.beginPath();let on=false;for(let i=0;i<vis.length;i++){const v=arr[st+i];if(v==null){on=false;continue}const xx=x(i),yy=yf(v);on?g.lineTo(xx,yy):g.moveTo(xx,yy);on=true}g.stroke();g.lineWidth=1};
+ g.save();g.beginPath();g.rect(0,T,cw,ch);g.clip();
+ if(IP.on.bb){const P=[];for(let i=0;i<vis.length;i++){const u=I.bbu[st+i];if(u!=null)P.push(i)}
+  if(P.length>1){g.beginPath();P.forEach((i,j)=>{const yy=y(I.bbu[st+i]);j?g.lineTo(x(i),yy):g.moveTo(x(i),yy)});for(let j=P.length-1;j>=0;j--)g.lineTo(x(P[j]),y(I.bbd[st+P[j]]));g.closePath();g.globalAlpha=.1;g.fillStyle=IC.bb;g.fill();g.globalAlpha=1}}
  vis.forEach((b,i)=>{const c=b.c>=b.o?up:dn,xx=x(i);g.strokeStyle=g.fillStyle=c;g.beginPath();g.moveTo(Math.round(xx)+.5,y(b.h));g.lineTo(Math.round(xx)+.5,y(b.l));g.stroke();
   const y1=y(Math.max(b.o,b.c)),y2=y(Math.min(b.o,b.c));g.fillRect(xx-bd/2,y1,bd,Math.max(1,y2-y1))});
+ for(const o of OV){if(o[0]=='BB giữa')g.setLineDash([4,3]);line(o[1],o[2],y,o[0].startsWith('BB')?1:1.4);g.setLineDash([])}
+ g.restore();
  if(L.last){const yy=Math.round(y(L.last))+.5,z=C[C.length-1],c=z&&z.c<z.o?dn:up;g.setLineDash([4,3]);g.strokeStyle=c;g.beginPath();g.moveTo(0,yy);g.lineTo(cw,yy);g.stroke();g.setLineDash([]);
   if(yy>=T&&yy<=T+ch){g.fillStyle=c;g.fillRect(cw,yy-9,R,18);g.fillStyle='#fff';g.textAlign='left';g.fillText(fmt(L.last,dc),cw+5,yy)}}
- if(L.cross>=0&&L.cross<vis.length){const b=vis[L.cross],xx=Math.round(x(L.cross))+.5;g.strokeStyle=gv('--mu');g.setLineDash([2,3]);g.beginPath();g.moveTo(xx,T);g.lineTo(xx,T+ch);g.stroke();g.setLineDash([]);
+ /* Chú thích giá trị chỉ báo: tại nến đang chạm, hoặc nến mới nhất */
+ const ci=L.cross>=0&&L.cross<vis.length?st+L.cross:end-1;
+ const tag=(items,x0,y0,maxW)=>{let xx=x0,yy=y0;g.textAlign='left';for(const [t,c] of items){const w=g.measureText(t).width+8;if(xx+w>x0+maxW&&xx>x0){xx=x0;yy+=15}
+   g.globalAlpha=.82;g.fillStyle=gv('--card');g.fillRect(xx-2,yy-7,w,14);g.globalAlpha=1;g.fillStyle=c;g.fillText(t,xx+2,yy);xx+=w+2}return yy};
+ let ly=T+8;
+ if(OV.length){const it=[];
+  if(IP.on.ma)it.push(['MA'+IP.ma1+' '+(I.ma1[ci]==null?'–':fmt(I.ma1[ci],dc)),IC.ma1],['MA'+IP.ma2+' '+(I.ma2[ci]==null?'–':fmt(I.ma2[ci],dc)),IC.ma2]);
+  if(IP.on.ema)it.push(['EMA'+IP.ema1+' '+(I.ema1[ci]==null?'–':fmt(I.ema1[ci],dc)),IC.ema1],['EMA'+IP.ema2+' '+(I.ema2[ci]==null?'–':fmt(I.ema2[ci],dc)),IC.ema2]);
+  if(IP.on.bb)it.push(['BB('+IP.bbn+','+fmt(IP.bbk,1)+') '+(I.bbu[ci]==null?'–':fmt(I.bbd[ci],dc)+' – '+fmt(I.bbu[ci],dc)),gv('--mu')]);
+  ly=tag(it,6,T+8,cw-12)+15}
+ /* Khung chỉ báo riêng */
+ subs.forEach((k,j)=>{const top=pb+j*SUBH,y0=top+20,y1=top+SUBH-4,hh=y1-y0;
+  g.strokeStyle=gv('--bd');g.beginPath();g.moveTo(0,top+.5);g.lineTo(W,top+.5);g.stroke();
+  const sc=(v,a,b)=>y1-hh*(v-a)/(b-a||1);
+  if(k=='vol'){let mx=0;for(const b of vis)if(b.v>mx)mx=b.v;
+   vis.forEach((b,i)=>{if(!(b.v>0)||!mx)return;const h=hh*b.v/mx;g.globalAlpha=.55;g.fillStyle=b.c>=b.o?up:dn;g.fillRect(x(i)-bd/2,y1-h,bd,h);g.globalAlpha=1});
+   g.fillStyle=gv('--mu');g.textAlign='left';if(mx)g.fillText(fv(mx),cw+5,y0+4);
+   const b=C[ci];tag([['Khối lượng '+(b&&b.v!=null?fv(b.v):'–'),gv('--tx')]],6,top+10,cw-12)}
+  else if(k=='rsi'){for(const lv of [30,50,70]){const yy=Math.round(sc(lv,0,100))+.5;g.strokeStyle=lv==50?gv('--bd'):gv('--mu');g.setLineDash(lv==50?[]:[3,3]);g.beginPath();g.moveTo(0,yy);g.lineTo(cw,yy);g.stroke();g.setLineDash([]);
+    if(lv!=50){g.fillStyle=gv('--mu');g.textAlign='left';g.fillText(String(lv),cw+5,yy)}}
+   line(I.rsi,IC.rsi,v=>sc(v,0,100));const v=I.rsi[ci];
+   tag([['RSI '+IP.rsi+' '+(v==null?'–':fmt(v,1))+(v>=70?' · quá mua':v!=null&&v<=30?' · quá bán':''),IC.rsi]],6,top+10,cw-12)}
+  else{let m=0;for(let i=st;i<end;i++)for(const a of [I.macd,I.sig,I.hist]){const v=a[i];if(v!=null&&Math.abs(v)>m)m=Math.abs(v)}if(!m)m=1;m*=1.1;
+   const zy=Math.round(sc(0,-m,m))+.5;g.strokeStyle=gv('--bd');g.beginPath();g.moveTo(0,zy);g.lineTo(cw,zy);g.stroke();
+   vis.forEach((b,i)=>{const v=I.hist[st+i];if(v==null)return;const yy=sc(v,-m,m);g.globalAlpha=.5;g.fillStyle=v>=0?up:dn;g.fillRect(x(i)-bd/2,Math.min(yy,zy),bd,Math.max(1,Math.abs(yy-zy)));g.globalAlpha=1});
+   line(I.macd,IC.macd,v=>sc(v,-m,m));line(I.sig,IC.sig,v=>sc(v,-m,m));
+   const md=dp(m*50);g.fillStyle=gv('--mu');g.textAlign='left';g.fillText(fmt(m/1.1,md),cw+5,y0+4);g.fillText('0',cw+5,zy);
+   const a=I.macd[ci],s2=I.sig[ci],h=I.hist[ci],F=v=>v==null?'–':fmt(v,md);
+   tag([['MACD('+IP.mf+','+IP.ms+','+IP.mg+') '+F(a),IC.macd],['Tín hiệu '+F(s2),IC.sig],['Cột '+F(h),h==null?gv('--mu'):h>=0?up:dn]],6,top+10,cw-12)}});
+ if(L.cross>=0&&L.cross<vis.length){const b=vis[L.cross],xx=Math.round(x(L.cross))+.5;g.strokeStyle=gv('--mu');g.setLineDash([2,3]);g.beginPath();g.moveTo(xx,T);g.lineTo(xx,bot);g.stroke();g.setLineDash([]);
   const D=new Date(b.t),p=v=>String(v).padStart(2,'0'),ts=p(D.getDate())+'/'+p(D.getMonth()+1)+' '+p(D.getHours())+':'+p(D.getMinutes()),
-   ln=[ts,'Mở '+fmt(b.o,dc),'Cao '+fmt(b.h,dc),'Thấp '+fmt(b.l,dc),'Đóng '+fmt(b.c,dc),(b.c>=b.o?'+':'')+fmt((b.c/b.o-1)*100,2)+'%'],bwd=128,bx=xx>cw/2?8:cw-bwd-8;
-  g.fillStyle=gv('--card');g.strokeStyle=gv('--bd');g.fillRect(bx,T+4,bwd,ln.length*16+8);g.strokeRect(bx+.5,T+4.5,bwd,ln.length*16+8);g.textAlign='left';
-  ln.forEach((t,j)=>{g.fillStyle=j==5?(b.c>=b.o?up:dn):gv('--tx');g.fillText(t,bx+8,T+16+j*16)})}}
+   ln=[ts,'Mở '+fmt(b.o,dc),'Cao '+fmt(b.h,dc),'Thấp '+fmt(b.l,dc),'Đóng '+fmt(b.c,dc),(b.c>=b.o?'+':'')+fmt((b.c/b.o-1)*100,2)+'%'],bwd=128,bx=xx>cw/2?8:cw-bwd-8,by=Math.min(ly-4,Math.max(T+4,pb-ln.length*16-12));
+  g.fillStyle=gv('--card');g.strokeStyle=gv('--bd');g.fillRect(bx,by,bwd,ln.length*16+8);g.strokeRect(bx+.5,by+.5,bwd,ln.length*16+8);g.textAlign='left';
+  ln.forEach((t,j)=>{g.fillStyle=j==5?(b.c>=b.o?up:dn):gv('--tx');g.fillText(t,bx+8,by+12+j*16)})}}
 
 /* ----- Thao tác chạm / chuột ----- */
 {const cv=$('lc');let P=null;
@@ -1700,7 +1814,7 @@ nav.addEventListener('click',e=>{if(eatClick){e.stopPropagation();e.preventDefau
 /* ===== Tự cập nhật khi có bản mới trên GitHub Pages =====
    Mỗi lần sửa app phải đổi APP_VER. Khi mở app hoặc quay lại app, tải lại index.html (bỏ qua bộ nhớ đệm)
    để so phiên bản: vừa mở app thì tự tải lại; đang dùng thì hiện thanh báo để bạn chọn lúc cập nhật. */
-const APP_VER='2026-11-28.8';
+const APP_VER='2026-11-28.9';
 (()=>{
 let inFrame=true;try{inFrame=window.top!==window.self}catch(e){}
 if(!/^https?:$/.test(location.protocol)||inFrame)return;
