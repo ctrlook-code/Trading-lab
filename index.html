@@ -226,12 +226,8 @@ label.chk input{width:22px;height:22px;flex:none;margin:0}
 <canvas id="lc"></canvas>
 <div class="row"><button class="s" id="lzi">＋ Phóng to</button><button class="s" id="lzo">－ Thu nhỏ</button><button class="s" id="lnow">⏭ Về hiện tại</button></div>
 <p class="cap" style="margin-top:8px">Kéo ngang để xem nến cũ · chạm vào nến để xem giá mở/cao/thấp/đóng · chạm lại để ẩn.</p>
+<p class="cap">Nguồn giá: dữ liệu thị trường công khai của Binance, chỉ đọc giá, không giao dịch. Giá có thể khác sàn Việt Nam. Bản lưu trong claude.ai không lấy được giá trực tuyến, hãy mở bản trên GitHub Pages.</p>
 <div class="err" id="lerr"></div>
-</section>
-<section class="card">
-<h2>Dùng cho Lab</h2>
-<div class="row" style="margin-top:0"><button id="luse">Đưa các nến đang xem vào Lab mô phỏng</button></div>
-<p class="cap" style="margin-top:10px">Nguồn giá: dữ liệu thị trường công khai của Binance, chỉ đọc giá, không giao dịch. Giá có thể khác sàn Việt Nam. Bản lưu trong claude.ai không lấy được giá trực tuyến, hãy mở bản trên GitHub Pages.</p>
 </section>
 <section class="card">
 <h2>Bản đồ tương quan</h2>
@@ -653,7 +649,7 @@ METHODS.bothgrid.notes=['Giao dịch CFD: cho phép bán khống (SELL) và gi�
 /* Thứ tự đánh số phương pháp: PP1, PP2, … theo đúng thứ tự trong danh sách này */
 ['buygrid','sellgrid','bothgrid','buyrb','momentum','infinity'].forEach(k=>{const v=METHODS[k];delete METHODS[k];METHODS[k]=v});
 const NO=k=>Object.keys(METHODS).indexOf(k)+1;
-const COMMON=['Giao dịch spot: không đòn bẩy, không bán khống. Không tính phí, spread, trượt giá.','Chế độ tự động: mỗi nến đi theo đường O→L→H→C (nến tăng) hoặc O→H→L→C (nến giảm). Dãy giá thì mỗi số là một điểm giá.','Chế độ bấm tay: mỗi lần bấm giá di chuyển đúng một khoảng lưới từ vị trí hiện tại. Hoàn tác lùi lại một thao tác.','Giá nhảy qua nhiều mắc trong một lần: xử lý lần lượt từng mắc theo hướng giá đi. Giá nằm giữa hai mắc: không có hành động, chỉ cập nhật lãi/lỗ thả nổi.','Dữ liệu cho Lab: tải lịch sử giá từ Binance ở mục 1, dán, nạp file, hoặc lấy nến thật từ tab “Giá trực tuyến” (tải từ Binance chỉ chạy ở bản trên GitHub Pages).'];
+const COMMON=['Giao dịch spot: không đòn bẩy, không bán khống. Không tính phí, spread, trượt giá.','Chế độ tự động: mỗi nến đi theo đường O→L→H→C (nến tăng) hoặc O→H→L→C (nến giảm). Dãy giá thì mỗi số là một điểm giá.','Chế độ bấm tay: mỗi lần bấm giá di chuyển đúng một khoảng lưới từ vị trí hiện tại. Hoàn tác lùi lại một thao tác.','Giá nhảy qua nhiều mắc trong một lần: xử lý lần lượt từng mắc theo hướng giá đi. Giá nằm giữa hai mắc: không có hành động, chỉ cập nhật lãi/lỗ thả nổi.','Dữ liệu cho Lab: tải lịch sử giá từ Binance ở mục 1, dán hoặc nạp file (tải từ Binance chỉ chạy ở bản trên GitHub Pages).'];
 METHODS.buygrid.notes=['Lệnh mua và lệnh cắt đều khớp đúng tại giá mắc lưới.','Mỗi mắc tối đa 1 lệnh. Giá chạm một mắc chưa có lệnh (đi lên hay đi xuống) thì mua 1 lệnh tại mắc đó; tại giá khởi tạo lúc bắt đầu chưa mua.','Quy tắc cắt: khi lệnh ở mắc cao nhất đang lỗ, cắt nó cùng số lệnh thấp nhất (lãi nhiều nhất) ít nhất sao cho tổng lãi/lỗ của nhóm cắt dương, lặp lại đến khi không cắt được nữa.','Không chốt lời riêng từng lệnh và không cắt lỗ theo giá.','Vốn chiếm dụng = tổng giá trị (giá vào × số lượng) các lệnh đang mở. “Vốn tham chiếu” chỉ dùng để tính % sụt giảm.','Chưa xác minh: giới hạn số lệnh hoặc vốn. Thông số “Tối đa lệnh mở” hiện chỉ dừng mua khi đạt giới hạn.'];
 METHODS.infinity.notes=['Số lượng sản phẩm ban đầu = vốn × tỷ lệ ÷ giá khởi tạo, mua tại giá khởi tạo.','Giá giảm một mắc: mua một lô. Giá hồi lên một mắc: bán lô ở mắc ngay phía dưới. Giá tăng trên giá khởi tạo: bán dần phần sản phẩm ban đầu.','Hết tiền mặt: chỉ mua phần còn đủ và dừng mua cho đến khi bán được.','Không có giá trần (giả định, chưa xác nhận).','Vốn chiếm dụng tối đa = phần vốn đã chuyển thành sản phẩm cao nhất (nguồn vốn trừ tiền mặt thấp nhất). “Lãi đã chốt” là lãi của các lô đã bán, phần còn lại là thả nổi.'];
 METHODS.momentum.notes=['Giao dịch CFD: cho phép bán khống (SELL). Chưa tính ký quỹ, đòn bẩy, phí, spread và phí qua đêm. Giả định vốn vô hạn, không giới hạn số lệnh mở.','Lệnh mở và cắt đều khớp đúng tại giá mắc lưới. Giá đi lên tới một mắc: nếu số BUY ở đó đã lớn hơn số SELL thì không mua; nếu chưa thì mua thêm cho số BUY hơn số SELL đúng một lệnh (chưa có gì thì mua 1). Giá đi xuống thì ngược lại với SELL. Mỗi lần giá chạm lại từ hướng ngược, mắc thêm lệnh nên số lệnh mỗi mắc tăng dần cho đến khi cắt toàn bộ.','Thứ tự tại mỗi mắc: xét cắt trước (tổng lãi/lỗ ròng của mọi lệnh đang mở lớn hơn 0 thì cắt toàn bộ), rồi mới áp quy tắc mở lệnh ở trên (sau khi cắt, mắc đó trống nên mở 1 lệnh).','Lúc bắt đầu tại giá khởi tạo chưa mở lệnh. Không chốt lời riêng từng lệnh, không cắt lỗ theo giá.','Vốn chiếm dụng = tổng (giá vào × số lượng) của mọi lệnh BUY và SELL đang mở (giá trị danh nghĩa, chưa bù trừ). “Tổng % vốn” chỉ có khi nhập vốn tham chiếu.','Chưa xác nhận: “tổng lớn hơn 0” hiện hiểu là lãi tối thiểu một khoảng lưới (vì mọi lệnh khớp đúng mắc). Quy tắc “hơn một lệnh” hiểu theo số lệnh. Số lệnh mỗi mắc tăng dần khi giá chạm lại nhiều lần. Tên phương pháp là tên tạm.'];
@@ -1395,12 +1391,6 @@ $('lsel').onchange=()=>{L.sym=$('lsel').value;keep();load()};
 const go=()=>{const v=$('lcus').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');if(!/^[A-Z0-9]{5,20}$/.test(v)){$('lerr').textContent='Mã không hợp lệ. Ví dụ: ADAUSDT, DOGEUSDT.';return}L.sym=v;$('lcus').value='';keep();load();if(K.M&&!K.busy&&!K.syms.includes(v))corr()};
 $('lgo').onclick=go;$('lcus').onkeydown=e=>{if(e.key==='Enter')go()};
 $('lzi').onclick=()=>zoom(1/1.4);$('lzo').onclick=()=>zoom(1.4);$('lnow').onclick=()=>{L.off=0;L.cross=-1;paint()};
-$('luse').onclick=()=>{if(!L.c.length){$('lerr').textContent='Chưa có nến nào để đưa vào Lab.';return}
- const end=L.c.length-L.off,B=L.c.slice(Math.max(0,end-Math.max(15,L.view)),end),p=v=>String(v).padStart(2,'0'),ts=t=>{const D=new Date(t);return D.getFullYear()+'-'+p(D.getMonth()+1)+'-'+p(D.getDate())+' '+p(D.getHours())+':'+p(D.getMinutes())};
- $('csv').value='time,open,high,low,close\n'+B.map(b=>[ts(b.t),b.o,b.h,b.l,b.c].join(',')).join('\n');
- $('mode').value='auto';$('mode').onchange();show('lab');
- $('stat').textContent='Đã nạp '+B.length+' nến '+L.sym+' khung '+(TF.find(t=>t[0]==L.tf)||[0,L.tf])[1]+' từ tab Giá trực tuyến. Chọn phương pháp rồi bấm “Đặt lại với thông số này”.';
- scrollTo({top:0})};
 function show(t){if(!['lab','gop','loc','gia','bot'].includes(t))t='lab';const live=t==='gia';
  [['lab','tabLab','tbLab'],['gop','tabGop','tbGop'],['loc','tabLoc','tbLoc'],['gia','tabLive','tbLive'],['bot','tabBot','tbBot']].forEach(([k,p,b])=>{$(p).hidden=k!==t;$(b).classList.toggle('on',k===t)});
  try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t)}catch(e){}
@@ -1710,7 +1700,7 @@ nav.addEventListener('click',e=>{if(eatClick){e.stopPropagation();e.preventDefau
 /* ===== Tự cập nhật khi có bản mới trên GitHub Pages =====
    Mỗi lần sửa app phải đổi APP_VER. Khi mở app hoặc quay lại app, tải lại index.html (bỏ qua bộ nhớ đệm)
    để so phiên bản: vừa mở app thì tự tải lại; đang dùng thì hiện thanh báo để bạn chọn lúc cập nhật. */
-const APP_VER='2026-11-28.7';
+const APP_VER='2026-11-28.8';
 (()=>{
 let inFrame=true;try{inFrame=window.top!==window.self}catch(e){}
 if(!/^https?:$/.test(location.protocol)||inFrame)return;
